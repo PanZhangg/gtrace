@@ -388,7 +388,8 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
         } \
         if (TP_IS_ENABLED(name)) { \
             static __thread int trigger_flag = 0; \
-            if (name->tr_fn) { \
+            if (name->tr_fn(&name->shared_mem_block[name->event_seq % \
+                                                    CIRCULAR_BUFFER_SIZE])) { \
                 trigger_flag = 1; \
                 name->first_triggered_time = trace_cpu_time_now(); \
             } \

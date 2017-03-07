@@ -18,8 +18,8 @@
 
 ##Build
 
-    > cd test
-    > make
+> cd test
+> make
 
 
 ##Enjoy!
