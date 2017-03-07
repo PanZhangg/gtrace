@@ -1,5 +1,5 @@
 /*
- * Author Name: Zhang Pan<zhangpan@yunshan.net.cn>
+ * Author Name: Zhang Pan<dazhangpan@gmail.com>
  * Finish Date:
  *
  * Generic purpose trace module
