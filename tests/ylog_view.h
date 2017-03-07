@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
+/*===========================
+ * User defined section
+ * data structures and callback functions
+ *==========================*/
 struct time_trace {
     uint64_t start;
     uint64_t end;
@@ -35,6 +39,10 @@ time_view_fn(void *arg, void* value_j)
             t->end);
     value_j = NULL;
 }
+
+/*===========================
+ * gtrace viewer interface
+ *==========================*/
 
 struct trace_manager *
 ylog_view_init();

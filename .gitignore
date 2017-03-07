@@ -1,0 +1,4 @@
+*.o
+example_target
+run_tests
+ylog_view

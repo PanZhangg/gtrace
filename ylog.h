@@ -65,7 +65,14 @@ typedef int (*is_triggered_fn)(void *arg);
 
 #define TRACE_POINT_REGISTER_MAP_SIZE ( TRACE_POINT_LIST_SIZE >> 8 )
 
-#define SHARED_MEM_BLOCK_DATA_SIZE 256
+/*
+ * This num is selected for fitting each shared_mem_block into one cache line
+ * When user wants more space to store the trace data, make sure the size
+ * of shared_mem_block is a multiply of 64
+ *
+ * TODO: Adjust this num automatically
+ */
+#define SHARED_MEM_BLOCK_DATA_SIZE 48
 
 struct trace_type {
     char format[TRACE_TYPE_FORMAT_LEN];
@@ -103,11 +110,11 @@ struct trace_point {
       * addr of the circular buffer belonging to this tp
       * in two different processes resepectively
       */
-    struct shared_mem_block* target_buffer;
-    struct shared_mem_block* view_buffer;
+    struct shared_mem_block *target_buffer;
+    struct shared_mem_block *view_buffer;
 
     /*
-     * function pointer to the func which decided if this
+     * function pointer to the func which decides if this
      * trace point is triggered or not
      */
     is_triggered_fn tr_fn;
