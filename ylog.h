@@ -37,7 +37,7 @@ typedef void (*content_retrieve)(void *addr, void *content);
  * function pointer for target process to decide
  * if its trace point is triggered or not
  * @arg void
- *   pointer to anything required to make this
+ *   pointer to trace data needed to make this
  *   decision
  * @return
  *   if triggered 1, not 0
