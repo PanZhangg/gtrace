@@ -313,6 +313,9 @@ list_point(struct trace_point **tps, uint32_t num);
 void *
 get_data_block(struct trace_point *tp);
 
+void *
+get_prev_data_block(struct trace_point *tp);
+
 
 /*
  * Get the first trace point in the
@@ -373,7 +376,7 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
  * buffer
  */
 
-#define SET_TRIGGER_TRACE_POINT(track, format, name, ptr) \
+#define SET_TRIGGER_TRACE_POINT(track, format, name, ptr, usr_tr_fn) \
         static __thread struct trace_point *name = NULL; \
         if (unlikely(name == NULL)) { \
             name = trace_point_create(#name); \
@@ -382,19 +385,29 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
             } \
             set_trace_point(name, track, format, \
                            __FILE__, __LINE__, __func__); \
+            name->tr_fn = usr_tr_fn; \
             ENABLE_TP(name); \
         } \
         if (TP_IS_ENABLED(name)) { \
             static __thread int trigger_flag = 0; \
-            ptr = (typeof(ptr))get_data_block(name); \
-            if (name->tr_fn(&name->target_buffer[name->event_seq % \
-                                                    CIRCULAR_BUFFER_SIZE].data)) { \
+            if (trigger_flag == 0) { \
+                ptr = (typeof(ptr))get_data_block(name); \
+            } else { \
+                if (name->event_left > 0) { \
+                    name->event_left--; \
+                    ptr = (typeof(ptr))get_data_block(name); \
+                } else { \
+                    ptr = (typeof(ptr))&name->target_buffer[0].data; \
+                } \
+            } \
+            if (trigger_flag == 0 && name->tr_fn(get_prev_data_block(name))) { \
+                struct user_defined_struct *s; \
+                s = (struct user_defined_struct *)get_prev_data_block(name); \
+                printf("Triggered!\n"); \
+                printf("event_seq:%ld\n", name->event_seq); \
+                printf("i:%d\n", s->i); \
                 trigger_flag = 1; \
                 name->first_triggered_time = trace_cpu_time_now(); \
-            } \
-            if (trigger_flag == 1 && (name->event_left) >= \
-                (CIRCULAR_BUFFER_SIZE >> 1)) { \
-                name->event_left--; \
             } \
         } else { \
             goto STOP_RECORD_LABEL(name); \
@@ -427,26 +440,6 @@ stop_record_##name: ;
             int i = 0; \
             for (; i < num; i++) { \
                 register_content_retrieve_fn(tps[i], fn); \
-            } \
-        } \
-    } while(0)
-
-/*
- * Register trigger function to all trace point(s)
- * share the same "type". Typically it is the name of the
- * user defined data struct recored by one or multiple
- * trace point(s)
- * See example in unit test for details
- */
-#define REGISTER_TRIGGER_FN_FOR_TYPE(tm, type, fn) \
-    do { \
-        uint32_t num; \
-        struct trace_point *tps[TRACE_POINT_LIST_SIZE]; \
-        find_tp_by_type(tm, type, tps, &num); \
-        if (num != 0) { \
-            int i = 0; \
-            for (; i < num; i++) { \
-                register_trigger_fn(tps[i], fn); \
             } \
         } \
     } while(0)

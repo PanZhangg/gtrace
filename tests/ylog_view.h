@@ -44,7 +44,7 @@ int
 user_trigger_fn(void *arg)
 {
     struct user_defined_struct *s = (struct user_defined_struct *)arg;
-    if (s->i == 1000) {
+    if (s->i == 1) {
         return 1;
     } else {
         return 0;

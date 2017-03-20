@@ -16,7 +16,7 @@ int main() {
     asm volatile ("" ::: "memory");
     for (i = 0, j = 0; i < 100000000; i++) {
         j = i * i;
-        SET_TRIGGER_TRACE_POINT(4, "user_defined_struct", example_tp, u);
+        SET_TRIGGER_TRACE_POINT(4, "user_defined_struct", example_tp, u, user_trigger_fn);
         u->i = i;
         u->j = j;
         STOP_RECORD(example_tp);

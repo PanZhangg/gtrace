@@ -306,12 +306,32 @@ get_next_buffer_block(struct trace_point *tp)
     return (&tp->target_buffer[next_index]);
 }
 
+inline static struct shared_mem_block *
+get_prev_buffer_block(struct trace_point *tp)
+{
+    uint64_t seq;
+    if (likely(tp->event_seq != 0)) {
+        seq = tp->event_seq - 1;
+    } else {
+        seq = 0;
+    }
+    uint32_t prev_index = seq % CIRCULAR_BUFFER_SIZE;
+    return (&tp->target_buffer[prev_index]);
+}
+
 void *
 get_data_block(struct trace_point *tp)
 {
     struct shared_mem_block *b = get_next_buffer_block(tp);
     b->event.trace_point_id = tp->trace_point_id;
     b->event.timestamp = trace_cpu_time_now();
+    return (void *)b->data;
+}
+
+void *
+get_prev_data_block(struct trace_point *tp)
+{
+    struct shared_mem_block *b = get_prev_buffer_block(tp);
     return (void *)b->data;
 }
 
