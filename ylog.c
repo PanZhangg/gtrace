@@ -71,8 +71,9 @@ trace_manager_init(uint32_t key)
         exit(0);
     }
     memset(g_trace_manager, 0, sizeof(struct trace_manager));
+
     /* Initialize value other than 0*/
-    g_trace_manager->event_num_left = CIRCULAR_BUFFER_SIZE;
+    g_trace_manager->cpu_freq_mhz = get_cpu_mhz();
 }
 
 void

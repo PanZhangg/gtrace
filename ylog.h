@@ -171,18 +171,10 @@ struct shared_mem_block {
 struct trace_manager {
     uint32_t trace_point_num;
 
-    /*
-     * Num of shared memory blocks left to store
-     * events, 0 means no space
-     * Used to stop tracing after special event
-     * is triggered, make sure the event is
-     * existing in the circular buffer
-     */
-    uint32_t event_num_left;
-
     /* Mask of trace_point_list to indicate enabled ones*/
     uint8_t enabled_trace_point_mask[ENABLED_MASK_LEN];
 
+    double cpu_freq_mhz;
 
     /* List to store trace points*/
     struct trace_point trace_point_list[TRACE_POINT_LIST_SIZE];
@@ -376,7 +368,7 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
 /*
  * Set one trace point which could be triggered by a
  * user defined trigger aka the return value of the
- * triggered is 1
+ * tr_fn is 1
  * Keep the triggered event in the middle of the circular
  * buffer
  */
@@ -394,13 +386,14 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
         } \
         if (TP_IS_ENABLED(name)) { \
             static __thread int trigger_flag = 0; \
-            if (name->tr_fn(&name->shared_mem_block[name->event_seq % \
-                                                    CIRCULAR_BUFFER_SIZE])) { \
+            ptr = (typeof(ptr))get_data_block(name); \
+            if (name->tr_fn(&name->target_buffer[name->event_seq % \
+                                                    CIRCULAR_BUFFER_SIZE].data)) { \
                 trigger_flag = 1; \
                 name->first_triggered_time = trace_cpu_time_now(); \
             } \
-            if (trigger_flag == 1 && name->event_left) { \
-                ptr = (typeof(ptr))get_data_block(name); \
+            if (trigger_flag == 1 && (name->event_left) >= \
+                (CIRCULAR_BUFFER_SIZE >> 1)) { \
                 name->event_left--; \
             } \
         } else { \
@@ -434,6 +427,26 @@ stop_record_##name: ;
             int i = 0; \
             for (; i < num; i++) { \
                 register_content_retrieve_fn(tps[i], fn); \
+            } \
+        } \
+    } while(0)
+
+/*
+ * Register trigger function to all trace point(s)
+ * share the same "type". Typically it is the name of the
+ * user defined data struct recored by one or multiple
+ * trace point(s)
+ * See example in unit test for details
+ */
+#define REGISTER_TRIGGER_FN_FOR_TYPE(tm, type, fn) \
+    do { \
+        uint32_t num; \
+        struct trace_point *tps[TRACE_POINT_LIST_SIZE]; \
+        find_tp_by_type(tm, type, tps, &num); \
+        if (num != 0) { \
+            int i = 0; \
+            for (; i < num; i++) { \
+                register_trigger_fn(tps[i], fn); \
             } \
         } \
     } while(0)

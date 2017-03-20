@@ -37,8 +37,12 @@ int main() {
 
     list_all_trace_point(tm);
 
+/*
+ * TODO:register callback func automatically
+ */
     REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(tm, "user_defined_struct", user_view_fn);
     REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(tm, "time_trace", time_view_fn);
+    REGISTER_TRIGGER_FN_FOR_TYPE(tm, "user_defined_struct", user_trigger_fn);
     struct trace_point *tp = get_first_tp_by_track(tm, 4);
     struct trace_point *tps[5];
     uint32_t num;

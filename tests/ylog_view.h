@@ -1,5 +1,6 @@
 #ifndef __YLOG_VIEW__
 #define __YLOG_VIEW__
+
 #include <stdio.h>
 #include <stdint.h>
 
@@ -16,7 +17,6 @@ struct user_defined_struct {
     int i;
     int j;
 };
-
 
 void
 user_view_fn(void *arg, void* value_j)
@@ -38,6 +38,17 @@ time_view_fn(void *arg, void* value_j)
             \rend time stamp %ld\n", t->start,
             t->end);
     value_j = NULL;
+}
+
+int
+user_trigger_fn(void *arg)
+{
+    struct user_defined_struct *s = (struct user_defined_struct *)arg;
+    if (s->i == 1000) {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 /*===========================
