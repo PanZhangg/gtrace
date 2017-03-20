@@ -18,6 +18,32 @@ trace_cpu_time_now(void)
     return (uint64_t)a + ((uint64_t)d << (uint64_t)32);
 }
 
+double
+get_cpu_mhz(void)
+{
+    FILE *f;
+    char buf[256];
+    double mhz = 0.0;
+    f = fopen("/proc/cpuinfo", "r");
+    if (!f) {
+        fprintf(stderr, "Can not open cpuinfo file\n");
+        return 0;
+    }
+    while (fgets(buf, sizeof(buf), f)) {
+        double m;
+        int rc;
+        rc = sscanf(buf, "cpu MHz : %lf", &m);
+        if ( rc > 0) {
+            if (mhz == 0.0) {
+                mhz = m;
+                break;
+            }
+        }
+    }
+    fclose(f);
+    return mhz;
+}
+
 static struct trace_manager *
 map_shm(uint32_t key)
 {

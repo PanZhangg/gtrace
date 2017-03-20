@@ -1,7 +1,7 @@
-#gtrace
+# gtrace
 ---
 
-##A generic purpose user space tracer
+## A generic purpose user space tracer
 
 * Blazing fast
 * User defined data structure and callback function
@@ -11,15 +11,16 @@
 * Ncurses based display (developing)
 
 
-##Prerequisite
+## Prerequisite
 
 * -lcheck for unit test cases
 * -lncurses for ncurses based result display
 
-##Build
+## Build
 
-> cd test
-> make
+>cd test
+
+>make
 
 
-##Enjoy!
+## Enjoy!

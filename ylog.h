@@ -22,6 +22,9 @@ extern struct trace_manager *g_trace_manager;
 uint64_t
 trace_cpu_time_now(void);
 
+double
+get_cpu_mhz(void);
+
 /*
  * function pointer for view process to retrieve
  * content stored in the event data space
@@ -53,6 +56,9 @@ typedef int (*is_triggered_fn)(void *arg);
 #define likely(x) __builtin_expect(!!(x), 1)
 #endif
 
+/*
+ * unit for SIZE and LEN: bytes
+ */
 #define TRACE_POINT_NAME_LEN 24
 #define TRACE_POINT_LOCATION_LEN 32
 #define TRACE_TYPE_FORMAT_LEN 32

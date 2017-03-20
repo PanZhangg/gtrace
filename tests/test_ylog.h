@@ -249,6 +249,13 @@ START_TEST (tcp_pkt_gen_test)
 }
 END_TEST
 
+START_TEST (get_cpu_mhz_test)
+{
+    double mhz = get_cpu_mhz();
+    printf("CPU Freq: %lf\n", mhz);
+}
+END_TEST
+
 Suite *create_sample_suite(void)
 {
     Suite *suite = suite_create("ylog suite");
@@ -263,6 +270,7 @@ Suite *create_sample_suite(void)
     tcase_add_test(test_case, track_hash_test);
     tcase_add_test(test_case, cr_fn_test);
     tcase_add_test(test_case, multi_thread_test);
+    tcase_add_test(test_case, get_cpu_mhz_test);
     suite_add_tcase(suite, test_case);
     return suite;
 }
