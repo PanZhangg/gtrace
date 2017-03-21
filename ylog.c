@@ -301,20 +301,18 @@ list_point(struct trace_point **tps, uint32_t num)
 inline static struct shared_mem_block *
 get_next_buffer_block(struct trace_point *tp)
 {
-    uint32_t next_index = tp->event_seq % CIRCULAR_BUFFER_SIZE;
+    /*
+     * event_seq will start with 1
+     */
     tp->event_seq++;
+    uint32_t next_index = tp->event_seq % CIRCULAR_BUFFER_SIZE;
     return (&tp->target_buffer[next_index]);
 }
 
 inline static struct shared_mem_block *
 get_prev_buffer_block(struct trace_point *tp)
 {
-    uint64_t seq;
-    if (likely(tp->event_seq != 0)) {
-        seq = tp->event_seq - 1;
-    } else {
-        seq = 0;
-    }
+    uint64_t seq = tp->event_seq - 1;
     uint32_t prev_index = seq % CIRCULAR_BUFFER_SIZE;
     return (&tp->target_buffer[prev_index]);
 }

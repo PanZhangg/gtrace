@@ -401,11 +401,6 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
                 } \
             } \
             if (trigger_flag == 0 && name->tr_fn(get_prev_data_block(name))) { \
-                struct user_defined_struct *s; \
-                s = (struct user_defined_struct *)get_prev_data_block(name); \
-                printf("Triggered!\n"); \
-                printf("event_seq:%ld\n", name->event_seq); \
-                printf("i:%d\n", s->i); \
                 trigger_flag = 1; \
                 name->first_triggered_time = trace_cpu_time_now(); \
             } \
