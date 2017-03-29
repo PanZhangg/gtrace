@@ -35,7 +35,6 @@ ylog_view_init()
 int main() {
     struct trace_manager *tm = ylog_view_init();
 
-    list_all_trace_point(tm);
 
 /*
  * TODO:register callback func automatically
@@ -47,11 +46,14 @@ int main() {
     uint32_t num;
     find_tp_by_track(tm, 4, tps, &num);
     list_point(tps, num);
-/*
+
     while (1){
         welcome();
+        list_all_trace_point(tm);
+        mvaddstr(21, 33, g_output_buffer);
+        refresh();
+        sleep(100);
     }
-*/
     int i,j;
     for (i = 0;
          i < 10;

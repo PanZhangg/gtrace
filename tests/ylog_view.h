@@ -3,6 +3,16 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include "../ylog.h"
+
+/*===========================
+ * gtrace viewer interface
+ *==========================*/
+
+struct trace_manager *
+ylog_view_init();
+
+#define USER_PRINT(...) sprintf((g_output_buffer), __VA_ARGS__)
 
 /*===========================
  * User defined section
@@ -23,9 +33,13 @@ user_view_fn(void *arg, void* value_j)
 {
     struct user_defined_struct *u =
         (struct user_defined_struct *)arg;
+        /*
     fprintf(stdout, "user defined i is %d\n\
             \ruser defined j is %d\n", u->i,
             u->j);
+            */
+    USER_PRINT("user defined i is %d\nuser defined j is %d\n",
+                u->i, u->j);
     *(int *)value_j = u->j;
 }
 
@@ -50,12 +64,5 @@ user_trigger_fn(void *arg)
         return 0;
     }
 }
-
-/*===========================
- * gtrace viewer interface
- *==========================*/
-
-struct trace_manager *
-ylog_view_init();
 
 #endif

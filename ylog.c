@@ -114,7 +114,7 @@ trace_manager_connect(uint32_t key)
 struct trace_point *
 trace_point_create(const char *name)
 {
-    /* starts from 0*/
+    /* starts from 0 */
     uint32_t index = __sync_fetch_and_add(&g_trace_manager->trace_point_num, 1);
     if (g_trace_manager->trace_point_num > TRACE_POINT_LIST_SIZE ) {
         fprintf(stderr, "No more space, can not create trace point%s\n",
@@ -211,19 +211,17 @@ void static
 print_trace_point(struct trace_point *tp)
 {
     static char *status_string[2] = {"Disabled", "Enabled"};
-    fprintf(stdout, "TP_ID: %4d\t%8s\t%6s\t%5d\t%13ld\t%s\n",
+    fprintf(stdout, "\rTP_ID: %4d\t%8s\t%6s\t%5d\t%13ld\t%s\n",
             tp->trace_point_id, tp->name,
             status_string[tp->is_enabled], tp->track_id,
             tp->event_seq, tp->location);
 }
 
 
-
 #define PRINT_TRACE_POINT_TABLE_FIRST_LINE \
-fprintf(stdout, "\nTrace Point\tName\t\tStatus\tTrack\tEvent Records\tLocation\n"); \
-fprintf(stdout, "------------------------------------------"); \
+fprintf(stdout, "\r\nTrace Point\tName\t\tStatus\tTrack\tEvent Records\tLocation\n"); \
+fprintf(stdout, "\r------------------------------------------"); \
 fprintf(stdout, "------------------------------------------\n")
-
 
 /*
 #define PRINT_TRACE_POINT_TABLE_FIRST_LINE \

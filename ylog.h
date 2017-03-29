@@ -17,6 +17,13 @@
 
 #define SHM_KEY 4550
 
+/*===========================
+ * gtrace viewer global variable
+ *==========================*/
+
+#define OUTPUT_BUFFER_MAX_SIZE 1024
+char g_output_buffer[OUTPUT_BUFFER_MAX_SIZE];
+
 extern struct trace_manager *g_trace_manager;
 
 uint64_t
