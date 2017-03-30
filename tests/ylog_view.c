@@ -4,14 +4,30 @@
 #include <stdlib.h>
 #include "ylog_view.h"
 
-void
+WINDOW *my_win;
+
+static WINDOW *
+create_newwin(int height, int width, int starty, int startx)
+{
+    WINDOW *local_win;
+
+    local_win = newwin(height, width, starty, startx);
+    box(local_win, 0, 0);
+
+    wrefresh(local_win);
+
+    return local_win;
+}
+
+static void
 shutdown(int sig)
 {
+    delwin(my_win);
     endwin();
     exit(0);
 }
 
-void
+static void
 welcome()
 {
     signal(SIGINT, shutdown);
@@ -22,6 +38,7 @@ welcome()
     echo();
     mvaddstr(3, 33, "ylog Trace Viewer");
     refresh();
+    //my_win = create_newwin(40, 40, 40, 40);
 }
 
 struct trace_manager *
@@ -31,7 +48,9 @@ ylog_view_init()
     return tm;
 }
 
-int main() {
+int
+main()
+{
     struct trace_manager *tm = ylog_view_init();
 /*
  * TODO:register callback func automatically
@@ -44,7 +63,7 @@ int main() {
     find_tp_by_track(tm, 4, tps, &num);
     list_point(tps, num);
 
-    while (1){
+    while (1) {
         welcome();
         list_all_trace_point(tm);
         int j;

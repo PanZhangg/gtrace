@@ -14,7 +14,6 @@
 
 #include <stdint.h>
 #include <pthread.h>
-#include <ncurses.h>
 
 #define SHM_KEY 4550
 
