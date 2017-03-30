@@ -3,7 +3,6 @@
 #include <signal.h>
 #include <stdlib.h>
 #include "ylog_view.h"
-#include "../ylog.h"
 
 void
 shutdown(int sig)
@@ -34,8 +33,6 @@ ylog_view_init()
 
 int main() {
     struct trace_manager *tm = ylog_view_init();
-
-
 /*
  * TODO:register callback func automatically
  */
@@ -50,11 +47,14 @@ int main() {
     while (1){
         welcome();
         list_all_trace_point(tm);
-        mvaddstr(21, 33, g_output_buffer);
+        int j;
+        tp->cr_fn((void *)&tp->view_buffer[2].data, &j);
+        mvaddstr(10, 33, g_output_buffer);
         refresh();
         sleep(100);
     }
-    int i,j;
+
+    int i, j;
     for (i = 0;
          i < 10;
          i++) {
