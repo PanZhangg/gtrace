@@ -1,5 +1,5 @@
-#ifndef __USER__
-#define __USER__
+#ifndef __USER__H__
+#define __USER__H__
 
 //#define USER_PRINT(...) sprintf((g_output_buffer), __VA_ARGS__)
 
@@ -25,10 +25,6 @@ user_view_fn(void *arg, void* value_j)
     fprintf(stdout, "user defined i is %d\n\
             \ruser defined j is %d\n", u->i,
             u->j);
-    /*
-    USER_PRINT("user defined i is %d\nuser defined j is %d\n",
-                u->i, u->j);
-                */
     *(int *)value_j = u->j;
 }
 

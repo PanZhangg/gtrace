@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "../ylog.h"
-#include "ylog_view.h"
+#include "../user.h"
 
 int main() {
     trace_manager_init(SHM_KEY);

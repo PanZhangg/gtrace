@@ -9,8 +9,8 @@
  * after product deployment
  */
 
-#ifndef Y_LOG__
-#define Y_LOG__
+#ifndef __Y_LOG__H__
+#define __Y_LOG__H__
 
 #include <stdint.h>
 #include <pthread.h>

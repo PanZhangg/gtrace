@@ -1,5 +1,5 @@
-#ifndef __YLOG_VIEW__
-#define __YLOG_VIEW__
+#ifndef __YLOG_VIEW__H__
+#define __YLOG_VIEW__H__
 
 #include <stdio.h>
 #include <stdint.h>
@@ -12,7 +12,5 @@
 
 struct trace_manager *
 ylog_view_init();
-
-
 
 #endif

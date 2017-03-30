@@ -4,7 +4,14 @@
 #include <stdlib.h>
 #include "ylog_view.h"
 
-WINDOW *my_win;
+WINDOW *footer;
+WINDOW *header;
+
+static void
+update_footer(void);
+
+static void
+update_header(void);
 
 static WINDOW *
 create_newwin(int height, int width, int starty, int startx)
@@ -22,7 +29,7 @@ create_newwin(int height, int width, int starty, int startx)
 static void
 shutdown(int sig)
 {
-    delwin(my_win);
+    delwin(footer);
     endwin();
     exit(0);
 }
@@ -36,9 +43,63 @@ welcome()
     nonl();
     cbreak();
     echo();
-    mvaddstr(3, 33, "ylog Trace Viewer");
-    refresh();
+
+    if (has_colors()) {
+        start_color();
+        init_pair(1, COLOR_RED, COLOR_BLACK);
+        init_pair(2, COLOR_GREEN, COLOR_BLACK);
+        init_pair(3, COLOR_BLACK, COLOR_WHITE);
+        init_pair(4, COLOR_WHITE, COLOR_GREEN);
+        init_pair(5, COLOR_BLACK, COLOR_YELLOW);
+        init_pair(6, COLOR_GREEN, COLOR_BLACK);
+        init_pair(7, COLOR_RED, COLOR_YELLOW);
+    }
+
+    //mvaddstr(3, 33, "ylog Trace Viewer");
+    //refresh();
     //my_win = create_newwin(40, 40, 40, 40);
+    header = create_newwin(40, 400, 0, 0);
+    footer = create_newwin(400, 0, 0, 0);
+    update_header();
+    update_footer();
+    sleep(10);
+}
+
+static void
+print_key(WINDOW *win, char *key, char *desc, int toggle)
+{
+    int pair;
+    if (toggle > 0) {
+        pair = 4;
+    } else {
+        pair = 3;
+    }
+    wattron(win, COLOR_PAIR(pair));
+    wprintw(footer, "%s", key);
+    wattroff(win, COLOR_PAIR(pair));
+    wprintw(footer, ":%s", desc);
+}
+
+static void
+update_footer(void)
+{
+    werase(footer);
+    wmove(footer, 1, 1);
+    print_key(footer, "F2", "TP", 1);
+
+    wrefresh(footer);
+}
+
+static void
+update_header(void)
+{
+    werase(header);
+    wmove(header, 1, 1);
+    wattron(header, COLOR_PAIR(4));
+    wprintw(header, "%s", "Trace Viewer");
+    wattroff(header, COLOR_PAIR(4));
+
+    wrefresh(header);
 }
 
 struct trace_manager *
@@ -65,6 +126,8 @@ main()
 
     while (1) {
         welcome();
+    }
+    /*
         list_all_trace_point(tm);
         int j;
         tp->cr_fn((void *)&tp->view_buffer[2].data, &j);
@@ -72,6 +135,7 @@ main()
         refresh();
         sleep(100);
     }
+    */
 
     int i, j;
     for (i = 0;
