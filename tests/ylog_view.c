@@ -58,11 +58,39 @@ welcome()
     //mvaddstr(3, 33, "ylog Trace Viewer");
     //refresh();
     //my_win = create_newwin(40, 40, 40, 40);
-    header = create_newwin(40, 400, 0, 0);
-    footer = create_newwin(400, 0, 0, 0);
-    update_header();
+    footer = create_newwin(40, 400, LINES, 0);
+    header = create_newwin(40, 400, LINES, 0);
     update_footer();
-    sleep(10);
+    update_header();
+}
+
+static void
+print_digit(WINDOW *win, int digit)
+{
+    if (digit < 0) {
+        wattron(win, COLOR_PAIR(1));
+        wprintw(win, "%d", digit);
+        wattroff(win, COLOR_PAIR(1));
+    } else if (digit > 0) {
+        wattron(win, COLOR_PAIR(2));
+        wprintw(win, "+%d", digit);
+        wattroff(win, COLOR_PAIR(2));
+    } else {
+        wprintw(win, "0");
+    }
+}
+
+/*
+static void
+print_headers(int line, char *desc, int value, int second)
+*/
+
+static void
+set_window_title(WINDOW *win, char *title)
+{
+    wattron(win, A_BOLD);
+    mvwprintw(win, 0, 1, title);
+    wattroff(win, A_BOLD);
 }
 
 static void
@@ -124,9 +152,10 @@ main()
     find_tp_by_track(tm, 4, tps, &num);
     list_point(tps, num);
 
-    while (1) {
+    //while (1) {
         welcome();
-    }
+        sleep(10);
+    //}
     /*
         list_all_trace_point(tm);
         int j;
@@ -138,9 +167,7 @@ main()
     */
 
     int i, j;
-    for (i = 0;
-         i < 10;
-         i++) {
+    for (i = 0; i < 10; i++) {
         if (tp->cr_fn) {
             printf("timestamp: %ld\n",tp->view_buffer[i].event.timestamp);
             tp->cr_fn((void *)&tp->view_buffer[i].data, &j);
