@@ -10,6 +10,12 @@
 #define MAX_LINE_LENGTH 50
 #define MAX_LOG_LINES 4
 
+#define HEADER_HEIGHT 3
+#define FOOTER_HEIGHT 1
+#define STATUS_HEIGHT ( MAX_LOG_LINES + 2 )
+#define WIN_HEIGHT_SUM_EXPECT_CENTER ( HEADER_HEIGHT + FOOTER_HEIGHT + \
+                                       STATUS_HEIGHT )
+
 int pref_panel_visible = 0;
 int pref_line_selected = 0;
 int pref_current_sort = 0;
@@ -95,20 +101,6 @@ set_window_title(WINDOW *win, char *title)
 	wattroff(win, A_BOLD);
 }
 
-void
-basic_header()
-{
-	werase(header);
-	box(header, 0 , 0);
-	set_window_title(header, "Statistics for interval [gathering data...[");
-	wattron(header, A_BOLD);
-	mvwprintw(header, 1, 4, "CPUs");
-	mvwprintw(header, 2, 4, "Threads");
-	mvwprintw(header, 3, 4, "FDs");
-	wattroff(header, A_BOLD);
-	wrefresh(header);
-}
-
 static void
 shutdown(int sig)
 {
@@ -159,19 +151,15 @@ welcome()
 	mousemask(BUTTON1_CLICKED, NULL);
 	refresh();
 
-    //mvaddstr(3, 33, "ylog Trace Viewer");
-    //refresh();
-    //my_win = create_newwin(40, 40, 40, 40);
-    footer = create_newwin(1, COLS - 1, LINES - 1, 0);
-    header = create_newwin(5, COLS - 1, 0, 0);
-	center = create_newwin(LINES - 5 - 7, COLS - 1, 5, 0);
-	status = create_newwin(MAX_LOG_LINES + 2, COLS - 1, LINES - 7, 0);
+    footer = create_newwin(FOOTER_HEIGHT, COLS - 1, LINES - 1, 0);
+    header = create_newwin(HEADER_HEIGHT, COLS - 1, 0, 0);
+	center = create_newwin(LINES - WIN_HEIGHT_SUM_EXPECT_CENTER, COLS - 1,
+                           HEADER_HEIGHT, 0);
+	status = create_newwin(STATUS_HEIGHT, COLS - 1, LINES - 7, 0);
 
-	print_log("Starting display");
+	print_log("Trace Viewer Started\nUse F-key to select");
 
     main_panel = new_panel(center);
-
-	basic_header();
 
     update_footer();
     update_header();
@@ -256,11 +244,6 @@ print_log(char *str)
 	wrefresh(status);
 }
 
-/*
-static void
-print_headers(int line, char *desc, int value, int second)
-*/
-
 static void
 print_key(WINDOW *win, char *key, char *desc, int toggle)
 {
@@ -273,7 +256,7 @@ print_key(WINDOW *win, char *key, char *desc, int toggle)
     wattron(win, COLOR_PAIR(pair));
     wprintw(footer, "%s", key);
     wattroff(win, COLOR_PAIR(pair));
-    wprintw(footer, ":%s", desc);
+    wprintw(footer, "%s", desc);
 }
 
 static void
@@ -281,7 +264,7 @@ update_footer(void)
 {
     werase(footer);
     wmove(footer, 1, 1);
-    print_key(footer, "F2", "TP", 1);
+    print_key(footer, "F2", "Trace Point", 1);
     print_key(footer, "F3", "PERF", 1);
     print_key(footer, "F4", "TRACE", 1);
 
@@ -291,11 +274,13 @@ update_footer(void)
 static void
 update_header(void)
 {
-    werase(header);
     wmove(header, 1, 1);
     wattron(header, COLOR_PAIR(4));
     wprintw(header, "%s", "Trace Viewer");
     wattroff(header, COLOR_PAIR(4));
+    wattron(header, COLOR_PAIR(2));
+    wprintw(header, "       %s", "Version:17.20");
+    wattroff(header, COLOR_PAIR(2));
 
     wrefresh(header);
 }
@@ -322,29 +307,18 @@ main()
     find_tp_by_track(tm, 4, tps, &num);
     list_point(tps, num);
 
-    //while (1) {
-        welcome();
-        //mvwprintw(center, 2, 2, "timestamp: %ld\n",tp->view_buffer[0].event.timestamp);
-        //wrefresh(center);
-        //sleep(10);
-    //}
-    /*
-        list_all_trace_point(tm);
-        int j;
-        tp->cr_fn((void *)&tp->view_buffer[2].data, &j);
-        mvaddstr(10, 33, g_output_buffer);
-        refresh();
-        sleep(100);
-    }
-    */
+    welcome();
 
-    int i, j;
+    set_window_title(center, "Trace Points");
+
+    int i, j, lines;
+    lines = 0;
     for (i = 0; i < 10; i++) {
         if (tp->cr_fn) {
-            mvwprintw(center, i + 1, 1, "timestamp: %ld\n",tp->view_buffer[i].event.timestamp);
-            //tp->cr_fn((void *)&tp->view_buffer[i].data, &j);
-            //wprintw(center, "j is %d\n", j);
-            //wrefresh(center);
+            mvwprintw(center, 2 * lines + 1, 1, "timestamp: %ld", tp->view_buffer[i].event.timestamp);
+            tp->cr_fn((void *)&tp->view_buffer[i].data, &j);
+            mvwprintw(center, 2 * lines + 2, 1, "j is %d", j);
+            lines++;
         }
     }
     wrefresh(center);
@@ -352,5 +326,6 @@ main()
 
     struct trace_point *time_tp = &tm->trace_point_list[1];
     time_tp->cr_fn((void *)&time_tp->view_buffer[0].data, &j);
+    shutdown(0);
     return 0;
 }

@@ -22,9 +22,6 @@ user_view_fn(void *arg, void* value_j)
 {
     struct user_defined_struct *u =
         (struct user_defined_struct *)arg;
-    fprintf(stdout, "user defined i is %d\n\
-            \ruser defined j is %d\n", u->i,
-            u->j);
     *(int *)value_j = u->j;
 }
 
