@@ -316,7 +316,7 @@ main()
     for (i = 0; i < 10; i++) {
         if (tp->cr_fn) {
             mvwprintw(center, 2 * lines + 1, 1, "timestamp: %ld", tp->view_buffer[i].event.timestamp);
-            tp->cr_fn((void *)&tp->view_buffer[i].data, &j);
+            RETRIEVE_TP_CONTENT(tp, i, &j);
             mvwprintw(center, 2 * lines + 2, 1, "j is %d", j);
             lines++;
         }

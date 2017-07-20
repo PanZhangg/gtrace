@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include <pthread.h>
 
-#define SHM_KEY 4550
+#define SHM_KEY 4551
 
 /*===========================
  * gtrace viewer global variable
@@ -116,13 +116,12 @@ struct trace_point {
      */
     uint32_t trigger_id;
 
-    /* Increment per event*/
+    /* Increment per event */
     uint64_t event_seq;
-
-     /*
-      * addr of the circular buffer belonging to this tp
-      * in two different processes resepectively
-      */
+    /*
+     * addr of the circular buffer belonging to this tp
+     * in two different processes resepectively
+     */
     struct shared_mem_block *target_buffer;
     struct shared_mem_block *view_buffer;
 
@@ -160,6 +159,12 @@ struct trace_point {
 
     /* Location of TP,__FILE__, __LINE__, __func__*/
     char location[TRACE_POINT_LOCATION_LEN];
+    /* Increment per read
+     * has to be apart with seq_event
+     * due to elimination of false-sharing
+     */
+    uint64_t read_seq;
+
 };
 
 struct trace_event {
@@ -189,7 +194,7 @@ struct trace_manager {
     /* Circular buffer*/
     struct shared_mem_block buffer[TRACE_POINT_LIST_SIZE][CIRCULAR_BUFFER_SIZE]
     __attribute__((aligned(64)));
-};
+}__attribute__((aligned(64)));
 
 
 /*
@@ -443,6 +448,21 @@ stop_record_##name: ;
             for (; i < num; i++) { \
                 register_content_retrieve_fn(tps[i], fn); \
             } \
+        } \
+    } while(0)
+
+/*
+ * Retrieve content from a trace point's
+ * index-th buffer via user defined cr_fn
+ *
+ * @arg content is an output argument
+ * space must be pre-alloc
+ */
+#define RETRIEVE_TP_CONTENT(TP, buf_index, content) \
+    do { \
+        if (TP->cr_fn) { \
+            TP->read_seq++; \
+            TP->cr_fn((void *)&TP->view_buffer[buf_index].data, content); \
         } \
     } while(0)
 
