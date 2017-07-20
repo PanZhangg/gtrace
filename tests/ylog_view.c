@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <panel.h>
 #include "ylog_view.h"
 
 #define DEFAULT_DELAY 15
@@ -42,6 +43,9 @@ WINDOW *footer;
 WINDOW *header;
 WINDOW *center;
 WINDOW *status;
+
+PANEL *main_panel;
+
 char *termtype;
 
 static void
@@ -69,6 +73,7 @@ create_newwin(int height, int width, int starty, int startx)
     return local_win;
 }
 
+/*
 static WINDOW *
 create_newwin_no_border(int height, int width, int starty, int startx)
 {
@@ -80,6 +85,7 @@ create_newwin_no_border(int height, int width, int starty, int startx)
 
     return local_win;
 }
+*/
 
 void
 set_window_title(WINDOW *win, char *title)
@@ -163,6 +169,8 @@ welcome()
 
 	print_log("Starting display");
 
+    main_panel = new_panel(center);
+
 	basic_header();
 
     update_footer();
@@ -228,8 +236,9 @@ print_log(char *str)
 
 	strncat(log_lines, str, MAX_LINE_LENGTH - 1);
 
-	if (nb_log_lines < MAX_LOG_LINES)
+	if (nb_log_lines < MAX_LOG_LINES) {
 		log_lines[strlen(log_lines)] = '\n';
+    }
 	log_lines[strlen(log_lines)] = '\0';
 
 	werase(status);
@@ -273,6 +282,8 @@ update_footer(void)
     werase(footer);
     wmove(footer, 1, 1);
     print_key(footer, "F2", "TP", 1);
+    print_key(footer, "F3", "PERF", 1);
+    print_key(footer, "F4", "TRACE", 1);
 
     wrefresh(footer);
 }
@@ -313,6 +324,8 @@ main()
 
     //while (1) {
         welcome();
+        //mvwprintw(center, 2, 2, "timestamp: %ld\n",tp->view_buffer[0].event.timestamp);
+        //wrefresh(center);
         //sleep(10);
     //}
     /*
@@ -328,11 +341,14 @@ main()
     int i, j;
     for (i = 0; i < 10; i++) {
         if (tp->cr_fn) {
-            printf("timestamp: %ld\n",tp->view_buffer[i].event.timestamp);
-            tp->cr_fn((void *)&tp->view_buffer[i].data, &j);
-            printf("j is %d\n", j);
+            mvwprintw(center, i + 1, 1, "timestamp: %ld\n",tp->view_buffer[i].event.timestamp);
+            //tp->cr_fn((void *)&tp->view_buffer[i].data, &j);
+            //wprintw(center, "j is %d\n", j);
+            //wrefresh(center);
         }
     }
+    wrefresh(center);
+    sleep(10);
 
     struct trace_point *time_tp = &tm->trace_point_list[1];
     time_tp->cr_fn((void *)&time_tp->view_buffer[0].data, &j);
