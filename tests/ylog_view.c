@@ -186,7 +186,7 @@ welcome()
                            HEADER_HEIGHT, 0);
 	status = create_newwin(STATUS_HEIGHT, COLS - 1, LINES - STATUS_HEIGHT - FOOTER_HEIGHT, 0);
 
-	print_log("Trace Viewer Started\nUse F-key below to select");
+	print_log("Trace Viewer Started\nPress F-key below");
 
     main_panel = new_panel(center);
 
@@ -294,8 +294,11 @@ update_footer(void)
 {
     werase(footer);
     wmove(footer, 1, 1);
+
     print_key(footer, "F2", "TP", 1);
     print_key(footer, "F3", "PERF", 1);
+    print_key(footer, "F4", "STATUS", 1);
+    print_key(footer, "F11", "ABOUT", 1);
 
     wrefresh(footer);
 }
@@ -307,9 +310,14 @@ update_header(void)
     wattron(header, COLOR_PAIR(4));
     wprintw(header, "%s", "Trace Viewer");
     wattroff(header, COLOR_PAIR(4));
+
     wattron(header, COLOR_PAIR(2));
     wprintw(header, "       %s", "Version:17.20");
     wattroff(header, COLOR_PAIR(2));
+
+    wattron(header, COLOR_PAIR(1));
+    wprintw(header, "       CPU: %fMHZ", get_cpu_mhz());
+    wattroff(header, COLOR_PAIR(1));
 
     wrefresh(header);
 }
@@ -321,6 +329,17 @@ ylog_view_init()
     return tm;
 }
 
+static void
+display_about_info(void)
+{
+    wattron(center, A_BOLD);
+    mvwprintw(center, 2 , 4, "Gtrace is a panacea to make your life easier");
+	wattroff(center, A_BOLD);
+    mvwprintw(center, 4 , 4, "Version: 17.07");
+    mvwprintw(center, 5 , 4, "Author: Pan Zhang");
+    mvwprintw(center, 6 , 4, "Email: dazhangpan@gmail.com");
+}
+
 void *
 handle_keyboard(void *arg)
 {
@@ -328,9 +347,33 @@ handle_keyboard(void *arg)
     while ((ch = getch())) {
         switch(ch) {
             case KEY_F(2):
+                werase(center);
+                box(center, 0, 0);
                 set_window_title(center, "Trace Points");
                 display_trace_points(tm_view, output_buffer);
 	            print_log("Display Trace Points");
+                break;
+            case KEY_F(3):
+	            werase(center);
+                box(center, 0, 0);
+                set_window_title(center, "Perf Stats");
+                wrefresh(center);
+                print_log("Display Perf Stats");
+                break;
+            case KEY_F(4):
+                werase(center);
+                box(center, 0, 0);
+                set_window_title(center, "Status Monitor");
+                wrefresh(center);
+                print_log("Start Status Monitor");
+                break;
+            case KEY_F(11):
+                werase(center);
+                box(center, 0, 0);
+                set_window_title(center, "About");
+                display_about_info();
+                wrefresh(center);
+                print_log("About Trace Viewer");
                 break;
             default:
                 break;
