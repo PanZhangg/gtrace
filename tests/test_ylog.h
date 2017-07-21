@@ -5,6 +5,9 @@
 #include "../ylog.h"
 #include "pktcraft.h"
 
+char output_buffer[128][2048];
+char **output;
+
 START_TEST (cpu_time_test)
 {
     uint64_t start, end;
@@ -63,7 +66,7 @@ START_TEST (tp_enable_disable_test)
     ck_assert(g_trace_manager->enabled_trace_point_mask[0] == 3);
     DISABLE_TP(tp);
     //printf("mask: %d\n",(int)g_trace_manager->enabled_trace_point_mask[0]);
-    list_enabled_trace_point(g_trace_manager);
+    list_enabled_trace_point(g_trace_manager, output);
     ck_assert(g_trace_manager->enabled_trace_point_mask[0] == 2);
     trace_manager_destroy(&g_trace_manager);
 }
@@ -109,7 +112,7 @@ START_TEST (get_record_mem_test)
     STOP_RECORD(test_tp);
     int read_a = (*(struct user_defined_struct *)&(test_tp->target_buffer[0].data)).a;
     int read_b = (*(struct user_defined_struct *)&(test_tp->target_buffer[0].data)).b;
-    list_all_trace_point(g_trace_manager);
+    list_all_trace_point(g_trace_manager, output);
     ck_assert_int_eq(read_a, 1);
     ck_assert_int_eq(read_b, 2);
     trace_manager_destroy(&g_trace_manager);
@@ -137,7 +140,7 @@ START_TEST (track_hash_test)
     hash_tp = get_first_tp_by_track(g_trace_manager, 4);
     read_a = (*(struct user_defined_struct *)&(hash_tp->target_buffer[0].data)).a;
     read_b = (*(struct user_defined_struct *)&(hash_tp->target_buffer[0].data)).b;
-    list_all_trace_point(g_trace_manager);
+    list_all_trace_point(g_trace_manager, output);
     ck_assert_int_eq(read_a, 1);
     ck_assert_int_eq(read_b, 2);
     trace_manager_destroy(&g_trace_manager);
@@ -202,12 +205,12 @@ START_TEST (multi_thread_test)
 
     REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(g_trace_manager, "user_defined_struct",
                                           user_defined_cr_fn);
-    list_enabled_trace_point(g_trace_manager);
+    list_enabled_trace_point(g_trace_manager, output);
     struct trace_point *tps[5];
     uint32_t num;
     //find_tp_by_track(g_trace_manager , 4, tps, &num);
     find_tp_by_type(g_trace_manager , "user_defined_struct", tps, &num);
-    list_point(tps, num);
+    list_point(tps, num, output);
     ck_assert_int_eq(num, 2);
     if (tps[0]->cr_fn != NULL) {
         tps[0]->cr_fn((void *)&tps[0]->target_buffer[1].data, NULL);

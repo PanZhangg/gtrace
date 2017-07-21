@@ -297,19 +297,19 @@ find_tp_by_track(struct trace_manager *tm,
  * Print each point's information formatlly
  */
 void
-list_all_trace_point(struct trace_manager *tm);
+list_all_trace_point(struct trace_manager *tm, char **output);
 
 void
-list_enabled_trace_point(struct trace_manager *tm);
+list_enabled_trace_point(struct trace_manager *tm, char **output);
 
 void
-list_disabled_trace_point(struct trace_manager *tm);
+list_disabled_trace_point(struct trace_manager *tm, char **output);
 
 /*
  * list num trace point(s) in tps
  */
 void
-list_point(struct trace_point **tps, uint32_t num);
+list_point(struct trace_point **tps, uint32_t num, char **output);
 
 /*
  * Get mem block address of a trace point
@@ -465,5 +465,8 @@ stop_record_##name: ;
             TP->cr_fn((void *)&TP->view_buffer[buf_index].data, content); \
         } \
     } while(0)
+
+/* TODO */
+//#define FOR_EACH_BUFFER_PER_TP
 
 #endif

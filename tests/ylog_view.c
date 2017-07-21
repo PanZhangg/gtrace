@@ -16,6 +16,13 @@
 #define WIN_HEIGHT_SUM_EXPECT_CENTER ( HEADER_HEIGHT + FOOTER_HEIGHT + \
                                        STATUS_HEIGHT )
 
+#define RETRIEVE_BUFFER_LENGTH 128
+#define RETRIEVE_BUFFER_SIZE 1024
+
+char retrieve_buffer[RETRIEVE_BUFFER_LENGTH][RETRIEVE_BUFFER_SIZE];
+
+char *output_buffer[RETRIEVE_BUFFER_LENGTH];
+
 int pref_panel_visible = 0;
 int pref_line_selected = 0;
 int pref_current_sort = 0;
@@ -54,7 +61,12 @@ PANEL *main_panel;
 
 char *termtype;
 
+struct trace_manager *tm_view;
+
 pthread_t keyboard_thread;
+
+static void
+display_trace_points(struct trace_manager *tm, char **output);
 
 static void
 update_footer(void);
@@ -118,6 +130,15 @@ handle_sigterm(int signal)
 }
 
 static void
+init_buffer_pointer(void)
+{
+    int i = 0;
+    for (; i < RETRIEVE_BUFFER_LENGTH; i++) {
+        output_buffer[i] = retrieve_buffer[i];
+    }
+}
+
+static void
 welcome()
 {
     signal(SIGINT, shutdown);
@@ -171,6 +192,7 @@ welcome()
 
     update_footer();
     update_header();
+    init_buffer_pointer();
 }
 
 static void
@@ -306,9 +328,9 @@ handle_keyboard(void *arg)
     while ((ch = getch())) {
         switch(ch) {
             case KEY_F(2):
-                set_window_title(center, "F2 pressed");
-                wrefresh(center);
-	            print_log("F2 Pressed");
+                set_window_title(center, "Trace Points");
+                display_trace_points(tm_view, output_buffer);
+	            print_log("Display Trace Points");
                 break;
             default:
                 break;
@@ -317,25 +339,37 @@ handle_keyboard(void *arg)
     return NULL;
 }
 
-int
-main()
+static void
+display_trace_points(struct trace_manager *tm, char **output)
 {
-    struct trace_manager *tm = ylog_view_init();
-/*
- * TODO:register callback func automatically
- */
-    REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(tm, "user_defined_struct", user_view_fn);
-    REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(tm, "time_trace", time_view_fn);
-    struct trace_point *tp = get_first_tp_by_track(tm, 4);
     struct trace_point *tps[5];
     uint32_t num;
-    find_tp_by_track(tm, 4, tps, &num);
-    list_point(tps, num);
 
-    welcome();
+    find_tp_by_track(tm, 4, tps, &num);
+    list_point(tps, num, output);
 
     set_window_title(center, "Trace Points");
 
+    int i = 0;
+    for(; i < 5; i++) {
+        mvwprintw(center, 1 + i, 2, output[i]);
+    }
+    wrefresh(center);
+}
+
+int
+main()
+{
+    tm_view = ylog_view_init();
+/*
+ * TODO:register callback func automatically
+ */
+    REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(tm_view, "user_defined_struct", user_view_fn);
+    REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(tm_view, "time_trace", time_view_fn);
+
+    welcome();
+
+/*
     int i, j, lines;
     lines = 0;
     for (i = 0; i < 10; i++) {
@@ -346,14 +380,12 @@ main()
             lines++;
         }
     }
-    wrefresh(center);
 
+*/
     pthread_create(&keyboard_thread, NULL, handle_keyboard, NULL);
 
     pthread_join(keyboard_thread, NULL);
 
-    //struct trace_point *time_tp = &tm->trace_point_list[1];
-    //time_tp->cr_fn((void *)&time_tp->view_buffer[0].data, &j);
     shutdown(0);
     return 0;
 }

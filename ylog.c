@@ -208,37 +208,29 @@ find_tp_by_track(struct trace_manager *tm,
 }
 
 void static
-print_trace_point(struct trace_point *tp)
+print_trace_point(struct trace_point *tp, char *output)
 {
     static char *status_string[2] = {"Disabled", "Enabled"};
-    fprintf(stdout, "\rTP_ID: %4d\t%8s\t%6s\t%5d\t%13ld\t%s\n",
+    sprintf(output, "TP_ID: %4d\t%8s\t%6s\t%5d\t%13ld\t%s",
             tp->trace_point_id, tp->name,
             status_string[tp->is_enabled], tp->track_id,
             tp->event_seq, tp->location);
 }
 
 
+#define TITLE_LINES 2
 #define PRINT_TRACE_POINT_TABLE_FIRST_LINE \
-fprintf(stdout, "\r\nTrace Point\tName\t\tStatus\tTrack\tEvent Records\tLocation\n"); \
-fprintf(stdout, "\r------------------------------------------"); \
-fprintf(stdout, "------------------------------------------\n")
-
-/*
-#define PRINT_TRACE_POINT_TABLE_FIRST_LINE \
-printw("\nTrace Point\tName\t\tStatus\tTrack\tEvent Records\tLocation\n"); \
-printw("------------------------------------------"); \
-printw("------------------------------------------\n"); \
-refresh()
-*/
-
+sprintf(output[0], "Trace Point\tName\t\tStatus\tTrack\tEvent Records\tLocation"); \
+sprintf(output[1], "-------------------------------------\
+-----------------------------------------"); \
 
 void
-list_all_trace_point(struct trace_manager *tm)
+list_all_trace_point(struct trace_manager *tm, char **output)
 {
     PRINT_TRACE_POINT_TABLE_FIRST_LINE;
     int i = 0;
         for(; i < tm->trace_point_num; i++){
-        print_trace_point(&tm->trace_point_list[i]);
+        print_trace_point(&tm->trace_point_list[i], output[TITLE_LINES + i]);
     }
 }
 
@@ -246,7 +238,8 @@ list_all_trace_point(struct trace_manager *tm)
     ( (tm->enabled_trace_point_mask[index] >> mod) & 1 )
 
 static void
-list_en_dis_trace_point(struct trace_manager *tm, uint8_t is_enable)
+list_en_dis_trace_point(struct trace_manager *tm, uint8_t is_enable,
+                        char **output)
 {
     PRINT_TRACE_POINT_TABLE_FIRST_LINE;
     int i = 0;
@@ -255,42 +248,42 @@ list_en_dis_trace_point(struct trace_manager *tm, uint8_t is_enable)
         uint32_t mod = i % 8;
         if (is_enable) {
             if (CHECK_ENABLE_MASK_BIT(tm, index, mod)) {
-                print_trace_point(&tm->trace_point_list[i]);
+                print_trace_point(&tm->trace_point_list[i], output[i + TITLE_LINES]);
             }
         } else {
             if (!CHECK_ENABLE_MASK_BIT(tm, index, mod)) {
-                print_trace_point(&tm->trace_point_list[i]);
+                print_trace_point(&tm->trace_point_list[i], output[i + TITLE_LINES]);
             }
         }
     }
 }
 
 void
-list_enabled_trace_point(struct trace_manager *tm)
+list_enabled_trace_point(struct trace_manager *tm, char **output)
 {
-    list_en_dis_trace_point(tm, 1);
+    list_en_dis_trace_point(tm, 1, output);
 }
 
 void
-list_disabled_trace_point(struct trace_manager *tm)
+list_disabled_trace_point(struct trace_manager *tm, char **output)
 {
-    list_en_dis_trace_point(tm, 0);
+    list_en_dis_trace_point(tm, 0, output);
 }
 
 void
-list_point(struct trace_point **tps, uint32_t num)
+list_point(struct trace_point **tps, uint32_t num, char **output)
 {
     PRINT_TRACE_POINT_TABLE_FIRST_LINE;
     if (tps == NULL) {
-        fprintf(stderr, "invalid parameter, tps is NULL\n");
+        sprintf(output[3], "invalid parameter, tps is NULL\n");
         return;
     }
     int i = 0;
     for(; i < num; i++) {
         if (tps[i] != NULL) {
-            print_trace_point(tps[i]);
+            print_trace_point(tps[i], output[i + TITLE_LINES]);
         } else {
-            fprintf(stderr, "point num is incorrect\n");
+            sprintf(output[i + TITLE_LINES], "point num is incorrect\n");
             break;
         }
     }
