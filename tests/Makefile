@@ -2,11 +2,12 @@ CC=gcc
 CFLAGS=-c -O2 -g -Wall -Wno-strict-aliasing
 LDFLAGS=-lcheck -lsubunit -lrt -lpthread -lm -lpanel -lncurses
 
-all: run_tests example_target ylog_view
+#all: run_tests example_target ylog_view
+all: example_target ylog_view
 
 
-run_tests: test_ylog.o ylog.o pktcraft.o
-	$(CC) $^ -o $@ $(LDFLAGS)
+#run_tests: test_ylog.o ylog.o pktcraft.o
+#$(CC) $^ -o $@ $(LDFLAGS)
 
 example_target: example_target.o ylog.o
 	$(CC) $^ -g -o $@ $(LDFLAGS)
@@ -14,8 +15,8 @@ example_target: example_target.o ylog.o
 ylog_view: ylog_view.o ylog.o
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-test_ylog.o: test_ylog.c
-	$(CC) $(CFLAGS) $< -o $@
+#test_ylog.o: test_ylog.c
+#$(CC) $(CFLAGS) $< -o $@
 
 ylog.o: ../ylog.c
 	$(CC) $(CFLAGS) $< -o $@
@@ -30,4 +31,4 @@ ylog_view.o: ylog_view.c
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm *.o run_tests example_target ylog_view
+	rm *.o example_target ylog_view

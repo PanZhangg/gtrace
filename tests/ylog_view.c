@@ -412,9 +412,9 @@ main()
 
     welcome();
 
-/*
     int i, j, lines;
     lines = 0;
+	struct trace_point *tp = get_first_tp_by_track(tm_view, 4);
     for (i = 0; i < 10; i++) {
         if (tp->cr_fn) {
             mvwprintw(center, 2 * lines + 1, 1, "timestamp: %ld", tp->view_buffer[i].event.timestamp);
@@ -423,8 +423,8 @@ main()
             lines++;
         }
     }
+	wrefresh(center);
 
-*/
     pthread_create(&keyboard_thread, NULL, handle_keyboard, NULL);
 
     pthread_join(keyboard_thread, NULL);

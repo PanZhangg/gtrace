@@ -360,10 +360,11 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
  * Otherwise the compiler will complain redefination error of *name*
  * The static *name* is used to make sure one trace point is setup
  * only once by per thread
+ * Additional arguments are for user record function(urf) use
  * Also use *name* to record data in the same scope, see example for
  * details
  */
-#define SET_TRACE_POINT(track, format, name, ptr) \
+#define SET_TRACE_POINT(track, format, name, type, urf, ...) \
         static __thread struct trace_point *name = NULL; \
         if (unlikely(name == NULL)) { \
             name = trace_point_create(#name); \
@@ -374,12 +375,14 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
                            __FILE__, __LINE__, __func__); \
             ENABLE_TP(name); \
         } \
+        type *ptr = NULL; \
         if (TP_IS_ENABLED(name)) { \
-            ptr = (typeof(ptr))get_data_block(name); \
+            ptr = (type *)get_data_block(name); \
         } else { \
             goto STOP_RECORD_LABEL(name); \
-        }
-
+        } \
+        urf(ptr, ##__VA_ARGS__); \
+        stop_record_##name:
 /*
  * Set one trace point which could be triggered by a
  * user defined trigger aka the return value of the
@@ -388,7 +391,7 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
  * buffer
  */
 
-#define SET_TRIGGER_TRACE_POINT(track, format, name, ptr, usr_tr_fn) \
+#define SET_TRIGGER_TRACE_POINT(track, format, name, type, usr_tr_fn, urf, ...) \
         static __thread struct trace_point *name = NULL; \
         if (unlikely(name == NULL)) { \
             name = trace_point_create(#name); \
@@ -400,16 +403,17 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
             name->tr_fn = usr_tr_fn; \
             ENABLE_TP(name); \
         } \
+        type *ptr = NULL; \
         if (TP_IS_ENABLED(name)) { \
             static __thread int trigger_flag = 0; \
             if (trigger_flag == 0) { \
-                ptr = (typeof(ptr))get_data_block(name); \
+                ptr = (type *)get_data_block(name); \
             } else { \
                 if (name->event_left > 0) { \
                     name->event_left--; \
-                    ptr = (typeof(ptr))get_data_block(name); \
+                    ptr = (type *)get_data_block(name); \
                 } else { \
-                    ptr = (typeof(ptr))&name->target_buffer[0].data; \
+                    ptr = (type *)&name->target_buffer[0].data; \
                 } \
             } \
             if (trigger_flag == 0 && name->tr_fn(get_prev_data_block(name))) { \
@@ -418,7 +422,9 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
             } \
         } else { \
             goto STOP_RECORD_LABEL(name); \
-        }
+        } \
+        urf(ptr, ##__VA_ARGS__); \
+        stop_record_##name:
 
 /*
  * Every SET_TRACE_POINT macro should followed by a STOP_RECORD macro

@@ -18,6 +18,13 @@ struct user_defined_struct {
 };
 
 void
+user_record_fn(struct user_defined_struct *uds, int i, int j)
+{
+    uds->i = i;
+    uds->j = j * j;
+}
+
+void
 user_view_fn(void *arg, void* value_j)
 {
     struct user_defined_struct *u =
