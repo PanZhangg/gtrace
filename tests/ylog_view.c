@@ -12,7 +12,7 @@
 
 #define HEADER_HEIGHT 3
 #define FOOTER_HEIGHT 1
-#define STATUS_HEIGHT ( MAX_LOG_LINES + 2 )
+#define STATUS_HEIGHT ( MAX_LOG_LINES + 2 + 1 )
 #define WIN_HEIGHT_SUM_EXPECT_CENTER ( HEADER_HEIGHT + FOOTER_HEIGHT + \
                                        STATUS_HEIGHT )
 
@@ -53,6 +53,8 @@ WINDOW *status;
 PANEL *main_panel;
 
 char *termtype;
+
+pthread_t keyboard_thread;
 
 static void
 update_footer(void);
@@ -109,6 +111,12 @@ shutdown(int sig)
     exit(0);
 }
 
+void
+handle_sigterm(int signal)
+{
+    pthread_cancel(keyboard_thread);
+}
+
 static void
 welcome()
 {
@@ -146,8 +154,8 @@ welcome()
 		define_key("\033[16~", KEY_F(6));
 		define_key("\033[17;2~", KEY_F(18));
 	}
-	//signal(SIGTERM, handle_sigterm);
-	//signal(SIGINT, handle_sigterm);
+
+	signal(SIGTERM, handle_sigterm);
 	mousemask(BUTTON1_CLICKED, NULL);
 	refresh();
 
@@ -155,9 +163,9 @@ welcome()
     header = create_newwin(HEADER_HEIGHT, COLS - 1, 0, 0);
 	center = create_newwin(LINES - WIN_HEIGHT_SUM_EXPECT_CENTER, COLS - 1,
                            HEADER_HEIGHT, 0);
-	status = create_newwin(STATUS_HEIGHT, COLS - 1, LINES - 7, 0);
+	status = create_newwin(STATUS_HEIGHT, COLS - 1, LINES - STATUS_HEIGHT - FOOTER_HEIGHT, 0);
 
-	print_log("Trace Viewer Started\nUse F-key to select");
+	print_log("Trace Viewer Started\nUse F-key below to select");
 
     main_panel = new_panel(center);
 
@@ -264,9 +272,8 @@ update_footer(void)
 {
     werase(footer);
     wmove(footer, 1, 1);
-    print_key(footer, "F2", "Trace Point", 1);
+    print_key(footer, "F2", "TP", 1);
     print_key(footer, "F3", "PERF", 1);
-    print_key(footer, "F4", "TRACE", 1);
 
     wrefresh(footer);
 }
@@ -290,6 +297,24 @@ ylog_view_init()
 {
     struct trace_manager *tm = trace_manager_connect(SHM_KEY);
     return tm;
+}
+
+void *
+handle_keyboard(void *arg)
+{
+    int ch;
+    while ((ch = getch())) {
+        switch(ch) {
+            case KEY_F(2):
+                set_window_title(center, "F2 pressed");
+                wrefresh(center);
+	            print_log("F2 Pressed");
+                break;
+            default:
+                break;
+        }
+    }
+    return NULL;
 }
 
 int
@@ -322,10 +347,13 @@ main()
         }
     }
     wrefresh(center);
-    sleep(10);
 
-    struct trace_point *time_tp = &tm->trace_point_list[1];
-    time_tp->cr_fn((void *)&time_tp->view_buffer[0].data, &j);
+    pthread_create(&keyboard_thread, NULL, handle_keyboard, NULL);
+
+    pthread_join(keyboard_thread, NULL);
+
+    //struct trace_point *time_tp = &tm->trace_point_list[1];
+    //time_tp->cr_fn((void *)&time_tp->view_buffer[0].data, &j);
     shutdown(0);
     return 0;
 }
