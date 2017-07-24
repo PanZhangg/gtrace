@@ -69,6 +69,9 @@ static void
 display_trace_points(struct trace_manager *tm, char **output);
 
 static void
+display_monitor_points(struct trace_manager *tm);
+
+static void
 update_footer(void);
 
 static void
@@ -363,8 +366,7 @@ handle_keyboard(void *arg)
             case KEY_F(4):
                 werase(center);
                 box(center, 0, 0);
-                set_window_title(center, "Status Monitor");
-                wrefresh(center);
+                display_monitor_points(tm_view);
                 print_log("Start Status Monitor");
                 break;
             case KEY_F(11):
@@ -380,6 +382,20 @@ handle_keyboard(void *arg)
         }
     }
     return NULL;
+}
+
+static void
+display_monitor_points(struct trace_manager *tm)
+{
+    while(1) {
+    set_window_title(center, "Status Monitor");
+    int i = 0;
+    for(; i < tm->monitor_point_num; i++) {
+        mvwprintw(center, 1 + i, 2, "%s:%d", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
+    }
+    wrefresh(center);
+    sleep(1);
+    }
 }
 
 static void

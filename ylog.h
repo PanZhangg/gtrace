@@ -69,6 +69,11 @@ typedef int (*is_triggered_fn)(void *arg);
 #define TRACE_POINT_NAME_LEN 24
 #define TRACE_POINT_LOCATION_LEN 32
 #define TRACE_TYPE_FORMAT_LEN 32
+
+/* Together with the 8 bytes data makes 64 bytes */
+#define MONITOR_POINT_STRING_BUFFER_LEN 58
+#define MP_LIST_LEN 256
+
 /*
  * Make sure these numbers are power of 2
  */
@@ -168,7 +173,7 @@ struct trace_point {
 };
 
 struct trace_event {
-    /*ID of the TP recorded this event*/
+    /* ID of the TP recorded this event */
     uint32_t trace_point_id;
     /* Absolute time stamp in CPU clock cycles. */
     uint64_t timestamp;
@@ -179,9 +184,21 @@ struct shared_mem_block {
     char data[SHARED_MEM_BLOCK_DATA_SIZE];
 };
 
+/*
+ * Type of monitor point
+ * Can not "trace" the history of a
+ * value, only the current value is
+ * provided. The size of value being
+ * monitored is maximum 8 bytes
+ */
+struct monitor_point {
+    uint64_t data;
+    char string_buffer[MONITOR_POINT_STRING_BUFFER_LEN];
+};
 
 struct trace_manager {
     uint32_t trace_point_num;
+    uint32_t monitor_point_num;
 
     /* Mask of trace_point_list to indicate enabled ones*/
     uint8_t enabled_trace_point_mask[ENABLED_MASK_LEN];
@@ -194,6 +211,11 @@ struct trace_manager {
     /* Circular buffer*/
     struct shared_mem_block buffer[TRACE_POINT_LIST_SIZE][CIRCULAR_BUFFER_SIZE]
     __attribute__((aligned(64)));
+
+    /* monitor points buffer */
+    struct monitor_point mp_list[MP_LIST_LEN]
+    __attribute__((aligned(64)));
+
 }__attribute__((aligned(64)));
 
 
@@ -212,7 +234,6 @@ struct trace_manager {
  */
 void
 trace_manager_init(uint32_t key);
-
 
 void
 trace_manager_destroy(struct trace_manager **);
@@ -338,6 +359,12 @@ struct trace_point *
 get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
 
 
+struct monitor_point *
+monitor_point_create(char *name);
+
+void
+set_monitor_point(struct monitor_point *mp, const char *file, const int line,
+                  const char *func, const char *name);
 
 #define TP_IS_ENABLED(tp) ( tp->is_enabled )
 
@@ -474,5 +501,17 @@ stop_record_##name: ;
 
 /* TODO */
 //#define FOR_EACH_BUFFER_PER_TP
+
+#define SET_MONITOR_POINT(name) \
+        static __thread struct monitor_point *mp = NULL; \
+        if (unlikely(mp == NULL)) { \
+            mp = monitor_point_create(#name); \
+            if (mp == NULL) { \
+                goto STOP_RECORD_LABEL(name); \
+            } \
+            set_monitor_point(mp, __FILE__, __LINE__, __func__, #name); \
+        } \
+        (mp->data) = (uint64_t)name; \
+        stop_record_##name:
 
 #endif

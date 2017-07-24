@@ -31,6 +31,14 @@ int main() {
     //t->end = end;
     printf("Time passed: %ld\n", end - start);
     //STOP_RECORD(time_tp);
+
+    i = 0;
+    while(1) {
+        i++;
+        SET_MONITOR_POINT(i);
+        sleep(1);
+    }
+
     trace_manager_destroy(&g_trace_manager);
 
     return 0;

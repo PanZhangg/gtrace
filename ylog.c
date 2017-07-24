@@ -335,3 +335,24 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track)
     }
     return NULL;
 }
+
+struct monitor_point *
+monitor_point_create(char *name)
+{
+    uint32_t index = __sync_fetch_and_add(&g_trace_manager->monitor_point_num, 1);
+    if (g_trace_manager->monitor_point_num > MP_LIST_LEN) {
+        fprintf(stderr, "No more space, can not create monitor point%s\n",
+                name);
+        return NULL;
+    }
+    struct monitor_point *mp = &g_trace_manager->mp_list[index];
+    return mp;
+}
+
+void
+set_monitor_point(struct monitor_point *mp, const char *file, const int line,
+                  const char *func, const char *name)
+{
+    snprintf(mp->string_buffer, sizeof(mp->string_buffer), "%s%s%d%s%s%s%s",
+             file, ": ", line, ", in ", func, " ,", name);
+}
