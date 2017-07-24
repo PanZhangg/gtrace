@@ -353,6 +353,6 @@ void
 set_monitor_point(struct monitor_point *mp, const char *file, const int line,
                   const char *func, const char *name)
 {
-    snprintf(mp->string_buffer, sizeof(mp->string_buffer), "%s%s%d%s%s%s%s",
-             file, ": ", line, ", in ", func, " ,", name);
+    snprintf(mp->string_buffer, sizeof(mp->string_buffer), "%s%s%s%s%s",
+             file, ", ", func, ": ", name);
 }

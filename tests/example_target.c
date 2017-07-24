@@ -26,17 +26,13 @@ int main() {
     }
     asm volatile ("" ::: "memory");
     uint64_t end = trace_cpu_time_now();
-    //SET_TRACE_POINT(4, "time_trace", time_tp, t);
-    //t->start = start;
-    //t->end = end;
     printf("Time passed: %ld\n", end - start);
-    //STOP_RECORD(time_tp);
 
-    i = 0;
+    int count = 0;
     while(1) {
-        i++;
-        SET_MONITOR_POINT(i);
-        sleep(1);
+        count++;
+        SET_MONITOR_POINT(count);
+        sleep(0.01);
     }
 
     trace_manager_destroy(&g_trace_manager);

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <panel.h>
+#include <fcntl.h>
 #include "ylog_view.h"
 
 #define DEFAULT_DELAY 15
@@ -18,6 +19,10 @@
 
 #define RETRIEVE_BUFFER_LENGTH 128
 #define RETRIEVE_BUFFER_SIZE 1024
+
+#define CHECK_F_KEYS(ch) \
+        ( *ch == KEY_F(2) || *ch == KEY_F(3) || *ch == KEY_F(4) || \
+          *ch == KEY_F(11) )
 
 char retrieve_buffer[RETRIEVE_BUFFER_LENGTH][RETRIEVE_BUFFER_SIZE];
 
@@ -69,7 +74,7 @@ static void
 display_trace_points(struct trace_manager *tm, char **output);
 
 static void
-display_monitor_points(struct trace_manager *tm);
+display_monitor_points(struct trace_manager *tm, int *ch);
 
 static void
 update_footer(void);
@@ -347,7 +352,9 @@ void *
 handle_keyboard(void *arg)
 {
     int ch;
+
     while ((ch = getch())) {
+begin:
         switch(ch) {
             case KEY_F(2):
                 werase(center);
@@ -364,11 +371,9 @@ handle_keyboard(void *arg)
                 print_log("Display Perf Stats");
                 break;
             case KEY_F(4):
-                werase(center);
-                box(center, 0, 0);
-                display_monitor_points(tm_view);
-                print_log("Start Status Monitor");
-                break;
+                print_log("Display Status Monitor");
+                display_monitor_points(tm_view, &ch);
+                goto begin;
             case KEY_F(11):
                 werase(center);
                 box(center, 0, 0);
@@ -385,17 +390,32 @@ handle_keyboard(void *arg)
 }
 
 static void
-display_monitor_points(struct trace_manager *tm)
+display_monitor_points(struct trace_manager *tm, int *ch)
 {
-    while(1) {
-    set_window_title(center, "Status Monitor");
-    int i = 0;
-    for(; i < tm->monitor_point_num; i++) {
-        mvwprintw(center, 1 + i, 2, "%s:%d", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
-    }
-    wrefresh(center);
-    sleep(1);
-    }
+    do {
+            werase(center);
+            box(center, 0, 0);
+            set_window_title(center, "Status Monitor");
+            int i = 0;
+            mvwprintw(center, 1, 2, "%s", "Monitor Points");
+            for(; i < tm->monitor_point_num; i++) {
+                if (tm->mp_list[i].data < 100000) {
+                    //wattron(center, COLOR_PAIR(4));
+                    mvwprintw(center, 2 + i, 2, "%s:%d", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
+                    //wattroff(center, COLOR_PAIR(4));
+                } else {
+                    //wattron(center, COLOR_PAIR(1));
+                    mvwprintw(center, 2 + i, 2, "%s:%d", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
+                    //wattroff(center, COLOR_PAIR(1));
+                }
+            }
+            wrefresh(center);
+            *ch = getch();
+            if (CHECK_F_KEYS(ch)) {
+                break;
+            }
+            sleep(0.01);
+    } while (1);
 }
 
 static void
@@ -419,6 +439,8 @@ display_trace_points(struct trace_manager *tm, char **output)
 int
 main()
 {
+    fcntl(0, F_SETFL, O_NONBLOCK);
+
     tm_view = ylog_view_init();
 /*
  * TODO:register callback func automatically
