@@ -5,11 +5,8 @@
 #include "../user.h"
 
 int main() {
+
     trace_manager_init(SHM_KEY);
-
-    //struct user_defined_struct *u;
-
-    //struct time_trace *t;
 
     int i, j;
     uint64_t start = trace_cpu_time_now();
@@ -28,11 +25,14 @@ int main() {
     uint64_t end = trace_cpu_time_now();
     printf("Time passed: %ld\n", end - start);
 
-    int count = 0;
+    int count_1 = 0;
+    int count_2 = 0;
     while(1) {
-        count++;
-        SET_MONITOR_POINT(count);
-        sleep(0.01);
+        count_1++;
+        count_2 += 2;
+        SET_MONITOR_POINT(count_1);
+        SET_MONITOR_POINT(count_2);
+        usleep(1000);
     }
 
     trace_manager_destroy(&g_trace_manager);

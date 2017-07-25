@@ -192,7 +192,7 @@ struct shared_mem_block {
  * monitored is maximum 8 bytes
  */
 struct monitor_point {
-    uint64_t data;
+    int64_t data;
     char string_buffer[MONITOR_POINT_STRING_BUFFER_LEN];
 };
 
@@ -381,6 +381,7 @@ set_monitor_point(struct monitor_point *mp, const char *file, const int line,
             g_trace_manager->enabled_trace_point_mask[tp->trace_point_id / 8] &= \
             ~(1 << tp->trace_point_id % 8); \
         } while(0)
+
 /*
  * Set one trace point with a unique name in one unique scope of
  * the source code in the target system
@@ -410,6 +411,7 @@ set_monitor_point(struct monitor_point *mp, const char *file, const int line,
         } \
         urf(ptr, ##__VA_ARGS__); \
         stop_record_##name:
+
 /*
  * Set one trace point which could be triggered by a
  * user defined trigger aka the return value of the
@@ -417,7 +419,6 @@ set_monitor_point(struct monitor_point *mp, const char *file, const int line,
  * Keep the triggered event in the middle of the circular
  * buffer
  */
-
 #define SET_TRIGGER_TRACE_POINT(track, format, name, type, usr_tr_fn, urf, ...) \
         static __thread struct trace_point *name = NULL; \
         if (unlikely(name == NULL)) { \
@@ -502,16 +503,24 @@ stop_record_##name: ;
 /* TODO */
 //#define FOR_EACH_BUFFER_PER_TP
 
+/*
+ * Set a monitor point
+ *
+ * @arg name is the value one would like to
+ * monitor
+ * TODO: May need RCU lock when write/read
+ * data
+ */
 #define SET_MONITOR_POINT(name) \
-        static __thread struct monitor_point *mp = NULL; \
-        if (unlikely(mp == NULL)) { \
-            mp = monitor_point_create(#name); \
-            if (mp == NULL) { \
+        static __thread struct monitor_point *mp##name = NULL; \
+        if (unlikely(mp##name == NULL)) { \
+            mp##name = monitor_point_create(#name); \
+            if (mp##name == NULL) { \
                 goto STOP_RECORD_LABEL(name); \
             } \
-            set_monitor_point(mp, __FILE__, __LINE__, __func__, #name); \
+            set_monitor_point(mp##name, __FILE__, __LINE__, __func__, #name); \
         } \
-        (mp->data) = (uint64_t)name; \
+        *(typeof(name) *)(&mp##name->data) = name; \
         stop_record_##name:
 
 #endif

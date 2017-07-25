@@ -127,6 +127,9 @@ static void
 shutdown(int sig)
 {
     delwin(footer);
+    delwin(center);
+    delwin(header);
+    delwin(status);
     endwin();
     exit(0);
 }
@@ -398,14 +401,15 @@ display_monitor_points(struct trace_manager *tm, int *ch)
             set_window_title(center, "Status Monitor");
             int i = 0;
             mvwprintw(center, 1, 2, "%s", "Monitor Points");
+            mvwprintw(center, 2, 2, "%s", "=======================================");
             for(; i < tm->monitor_point_num; i++) {
                 if (tm->mp_list[i].data < 100000) {
                     //wattron(center, COLOR_PAIR(4));
-                    mvwprintw(center, 2 + i, 2, "%s:%d", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
+                    mvwprintw(center, 3 + i, 2, "%s:%lld", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
                     //wattroff(center, COLOR_PAIR(4));
                 } else {
                     //wattron(center, COLOR_PAIR(1));
-                    mvwprintw(center, 2 + i, 2, "%s:%d", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
+                    mvwprintw(center, 3 + i, 2, "%s:%lld", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
                     //wattroff(center, COLOR_PAIR(1));
                 }
             }
@@ -414,7 +418,7 @@ display_monitor_points(struct trace_manager *tm, int *ch)
             if (CHECK_F_KEYS(ch)) {
                 break;
             }
-            sleep(0.01);
+            usleep(500);
     } while (1);
 }
 
