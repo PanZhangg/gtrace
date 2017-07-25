@@ -32,7 +32,7 @@ int main() {
         count_2 += 2;
         SET_MONITOR_POINT(count_1);
         SET_MONITOR_POINT(count_2);
-        SET_PERF_POINT(simulate, 1, "PPS");
+        SET_PERF_POINT(simulate, 1, PPS);
         usleep(1000);
     }
 

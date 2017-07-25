@@ -66,6 +66,8 @@ PANEL *main_panel;
 
 char *termtype;
 
+double cpu_mhz;
+
 struct trace_manager *tm_view;
 
 pthread_t keyboard_thread;
@@ -432,25 +434,23 @@ perf_point_avg_value(struct perf_point *pp)
     uint32_t last_index;
 
     if (pp->trigger_times > PERF_POINT_DATA_LEN - 1) {
-        index = PERF_POINT_DATA_LEN - 1;
-        last_index = pp->trigger_times % PERF_POINT_DATA_LEN;
+        index = PERF_POINT_DATA_LEN;
+        last_index = (pp->trigger_times - 1) % PERF_POINT_DATA_LEN;
         first_index = (last_index + 1) % PERF_POINT_DATA_LEN;
     } else {
         index = pp->trigger_times;
-        last_index = pp->trigger_times;
+        last_index = pp->trigger_times - 1;
         first_index = 0;
     }
     for(; i < index; i++) {
         sum += pp->data[i].count;
     }
 
-    return (float)sum;
     uint64_t cycles = pp->data[last_index].timestamp -
                       pp->data[first_index].timestamp;
 
-    float time = (float)cycles / (get_cpu_mhz() * 1000000);
-    return time;
-    //return ((double)sum / time);
+    float time = (float)cycles / (cpu_mhz * 1000000);
+    return ((double)sum / time);
 }
 
 static void
@@ -499,6 +499,8 @@ int
 main()
 {
     fcntl(0, F_SETFL, O_NONBLOCK);
+
+    cpu_mhz = get_cpu_mhz();
 
     tm_view = ylog_view_init();
 /*

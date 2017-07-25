@@ -561,7 +561,7 @@ stop_record_##name: ;
             if (mp##name == NULL) { \
                 goto STOP_RECORD_LABEL(name); \
             } \
-            set_perf_point(mp##name, __FILE__, __LINE__, __func__, #name, unit); \
+            set_perf_point(mp##name, __FILE__, __LINE__, __func__, #name, #unit); \
         } \
         uint32_t *_p = get_perf_point_data_block(mp##name); \
         *_p = (uint32_t)count; \

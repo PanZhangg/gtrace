@@ -13,7 +13,7 @@ struct trace_manager *g_trace_manager = NULL;
 uint64_t
 trace_cpu_time_now(void)
 {
-    uint32_t a, d;
+    register uint32_t a, d;
     asm volatile ("rdtsc":"=a" (a), "=d" (d));
     return (uint64_t)a + ((uint64_t)d << (uint64_t)32);
 }
@@ -383,7 +383,7 @@ set_perf_point(struct perf_point *pp, const char *file, const int line,
 uint32_t *
 get_perf_point_data_block(struct perf_point *pp)
 {
-    struct perf_point_data *ppd = &pp->data[pp->trigger_times / PERF_POINT_DATA_LEN];
+    struct perf_point_data *ppd = &pp->data[pp->trigger_times % PERF_POINT_DATA_LEN];
     pp->trigger_times++;
     ppd->timestamp = trace_cpu_time_now();
     return &ppd->count;
