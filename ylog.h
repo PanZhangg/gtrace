@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include <pthread.h>
 
-#define SHM_KEY 4551
+#define SHM_KEY 4552
 
 /*===========================
  * gtrace viewer global variable
@@ -71,8 +71,13 @@ typedef int (*is_triggered_fn)(void *arg);
 #define TRACE_TYPE_FORMAT_LEN 32
 
 /* Together with the 8 bytes data makes 64 bytes */
-#define MONITOR_POINT_STRING_BUFFER_LEN 58
+#define MONITOR_POINT_STRING_BUFFER_LEN 56
 #define MP_LIST_LEN 256
+
+/* 50 + tigger_times(8) + unit(8) = 64 bytes */
+#define PERF_POINT_STRING_BUFFER_LEN 48
+#define PERF_POINT_DATA_LEN 128
+#define PERF_POINT_LIST_LEN 256
 
 /*
  * Make sure these numbers are power of 2
@@ -196,9 +201,22 @@ struct monitor_point {
     char string_buffer[MONITOR_POINT_STRING_BUFFER_LEN];
 };
 
+struct perf_point_data {
+    uint32_t count;
+    uint64_t timestamp;
+};
+
+struct perf_point {
+    uint64_t trigger_times;
+    char string_buffer[PERF_POINT_STRING_BUFFER_LEN];
+    char unit[8];
+    struct perf_point_data data[PERF_POINT_DATA_LEN];
+};
+
 struct trace_manager {
     uint32_t trace_point_num;
     uint32_t monitor_point_num;
+    uint32_t perf_point_num;
 
     /* Mask of trace_point_list to indicate enabled ones*/
     uint8_t enabled_trace_point_mask[ENABLED_MASK_LEN];
@@ -212,8 +230,12 @@ struct trace_manager {
     struct shared_mem_block buffer[TRACE_POINT_LIST_SIZE][CIRCULAR_BUFFER_SIZE]
     __attribute__((aligned(64)));
 
-    /* monitor points buffer */
+    /* Monitor points buffer */
     struct monitor_point mp_list[MP_LIST_LEN]
+    __attribute__((aligned(64)));
+
+    /* Perf points buffer */
+    struct perf_point perf_list[PERF_POINT_LIST_LEN]
     __attribute__((aligned(64)));
 
 }__attribute__((aligned(64)));
@@ -358,13 +380,22 @@ get_prev_data_block(struct trace_point *tp);
 struct trace_point *
 get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
 
-
 struct monitor_point *
 monitor_point_create(char *name);
 
 void
 set_monitor_point(struct monitor_point *mp, const char *file, const int line,
                   const char *func, const char *name);
+
+struct perf_point *
+perf_point_create(char *name);
+
+void
+set_perf_point(struct perf_point *pp, const char *file, const int line,
+                  const char *func, const char *name, const char *unit);
+
+uint32_t *
+get_perf_point_data_block(struct perf_point *pp);
 
 #define TP_IS_ENABLED(tp) ( tp->is_enabled )
 
@@ -521,6 +552,19 @@ stop_record_##name: ;
             set_monitor_point(mp##name, __FILE__, __LINE__, __func__, #name); \
         } \
         *(typeof(name) *)(&mp##name->data) = name; \
+        stop_record_##name:
+
+#define SET_PERF_POINT(name, count, unit) \
+        static __thread struct perf_point *mp##name = NULL; \
+        if (unlikely(mp##name == NULL)) { \
+            mp##name = perf_point_create(#name); \
+            if (mp##name == NULL) { \
+                goto STOP_RECORD_LABEL(name); \
+            } \
+            set_perf_point(mp##name, __FILE__, __LINE__, __func__, #name, unit); \
+        } \
+        uint32_t *_p = get_perf_point_data_block(mp##name); \
+        *_p = (uint32_t)count; \
         stop_record_##name:
 
 #endif

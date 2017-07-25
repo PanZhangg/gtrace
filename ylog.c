@@ -356,3 +356,35 @@ set_monitor_point(struct monitor_point *mp, const char *file, const int line,
     snprintf(mp->string_buffer, sizeof(mp->string_buffer), "%s%s%s%s%s",
              file, ", ", func, ": ", name);
 }
+
+struct perf_point *
+perf_point_create(char *name)
+{
+    uint32_t index = __sync_fetch_and_add(&g_trace_manager->perf_point_num, 1);
+    if (g_trace_manager->perf_point_num > PERF_POINT_LIST_LEN) {
+        fprintf(stderr, "No more space, can not create perf point%s\n",
+                name);
+        return NULL;
+    }
+    struct perf_point *pp = &g_trace_manager->perf_list[index];
+    return pp;
+}
+
+void
+set_perf_point(struct perf_point *pp, const char *file, const int line,
+                  const char *func, const char *name, const char *unit)
+{
+    snprintf(pp->string_buffer, sizeof(pp->string_buffer), "%s%s%s%s%s",
+             file, ", ", func, ": ", name);
+    snprintf(pp->unit, sizeof(pp->unit),"%s", unit);
+    pp->trigger_times = 0;
+}
+
+uint32_t *
+get_perf_point_data_block(struct perf_point *pp)
+{
+    struct perf_point_data *ppd = &pp->data[pp->trigger_times / PERF_POINT_DATA_LEN];
+    pp->trigger_times++;
+    ppd->timestamp = trace_cpu_time_now();
+    return &ppd->count;
+}

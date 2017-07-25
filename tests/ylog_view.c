@@ -77,6 +77,9 @@ static void
 display_monitor_points(struct trace_manager *tm, int *ch);
 
 static void
+display_perf_points(struct trace_manager *tm, int *ch);
+
+static void
 update_footer(void);
 
 static void
@@ -367,12 +370,9 @@ begin:
 	            print_log("Display Trace Points");
                 break;
             case KEY_F(3):
-	            werase(center);
-                box(center, 0, 0);
-                set_window_title(center, "Perf Stats");
-                wrefresh(center);
                 print_log("Display Perf Stats");
-                break;
+                display_perf_points(tm_view, &ch);
+                goto begin;
             case KEY_F(4):
                 print_log("Display Status Monitor");
                 display_monitor_points(tm_view, &ch);
@@ -412,6 +412,61 @@ display_monitor_points(struct trace_manager *tm, int *ch)
                     mvwprintw(center, 3 + i, 2, "%s:%lld", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
                     //wattroff(center, COLOR_PAIR(1));
                 }
+            }
+            wrefresh(center);
+            *ch = getch();
+            if (CHECK_F_KEYS(ch)) {
+                break;
+            }
+            usleep(500);
+    } while (1);
+}
+
+static float
+perf_point_avg_value(struct perf_point *pp)
+{
+    int i = 0;
+    uint32_t sum = 0;
+    uint32_t index;
+    uint32_t first_index;
+    uint32_t last_index;
+
+    if (pp->trigger_times > PERF_POINT_DATA_LEN - 1) {
+        index = PERF_POINT_DATA_LEN - 1;
+        last_index = pp->trigger_times % PERF_POINT_DATA_LEN;
+        first_index = (last_index + 1) % PERF_POINT_DATA_LEN;
+    } else {
+        index = pp->trigger_times;
+        last_index = pp->trigger_times;
+        first_index = 0;
+    }
+    for(; i < index; i++) {
+        sum += pp->data[i].count;
+    }
+
+    return (float)sum;
+    uint64_t cycles = pp->data[last_index].timestamp -
+                      pp->data[first_index].timestamp;
+
+    float time = (float)cycles / (get_cpu_mhz() * 1000000);
+    return time;
+    //return ((double)sum / time);
+}
+
+static void
+display_perf_points(struct trace_manager *tm, int *ch)
+{
+    do {
+            werase(center);
+            box(center, 0, 0);
+            set_window_title(center, "Perf Stats");
+            int i = 0;
+            mvwprintw(center, 1, 2, "%s", "Perf Points");
+            mvwprintw(center, 2, 2, "%s", "=======================================");
+            for(; i < tm->perf_point_num; i++) {
+                float avg = perf_point_avg_value(&tm->perf_list[i]);
+                mvwprintw(center, 3 + i, 2, "%s:%f %s", tm->perf_list[i].string_buffer, avg,
+                          tm->perf_list[i].unit);
             }
             wrefresh(center);
             *ch = getch();
