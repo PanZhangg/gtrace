@@ -10,12 +10,20 @@
 
 struct trace_manager *g_trace_manager = NULL;
 
+
 uint64_t
 trace_cpu_time_now(void)
 {
-    register uint32_t a, d;
-    asm volatile ("rdtsc":"=a" (a), "=d" (d));
-    return (uint64_t)a + ((uint64_t)d << (uint64_t)32);
+    union {
+        uint64_t v;
+        struct {
+            uint32_t lo;
+            uint32_t hi;
+        };
+    } tsc;
+
+    asm volatile ("rdtsc":"=a" (tsc.lo), "=d" (tsc.hi));
+    return tsc.v;
 }
 
 double
