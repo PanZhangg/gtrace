@@ -25,6 +25,23 @@ int main() {
     uint64_t end = trace_cpu_time_now();
     printf("Time passed: %ld\n", end - start);
 
+    start = trace_cpu_time_now();
+    asm volatile ("" ::: "memory");
+    for (i = 0, j = 0; i < 100000000; i++, j++) {
+        trace_cpu_time_now();
+    }
+    asm volatile ("" ::: "memory");
+    end = trace_cpu_time_now();
+    printf("Trace overhead: %f\n", (double)(end - start) / 100000000.0);
+
+    start = trace_cpu_time_now();
+    asm volatile ("" ::: "memory");
+    usleep(1000);
+    asm volatile ("" ::: "memory");
+    end = trace_cpu_time_now();
+    printf("1000us<->cycles: %ld\n", (end - start));
+
+
     int count_1 = 0;
     int count_2 = 0;
 
@@ -34,7 +51,7 @@ int main() {
         SET_MONITOR_POINT(count_1);
         SET_MONITOR_POINT(count_2);
         SET_PERF_POINT(simulate, 1, PPS);
-        usleep(1000);
+        usleep(100000);
     }
 
 /*
