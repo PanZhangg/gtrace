@@ -27,7 +27,7 @@ int main() {
 
     int count_1 = 0;
     int count_2 = 0;
-    /*
+
     while(1) {
         count_1++;
         count_2 += 2;
@@ -36,8 +36,8 @@ int main() {
         SET_PERF_POINT(simulate, 1, PPS);
         usleep(1000);
     }
-    */
 
+/*
     start = trace_cpu_time_now();
     asm volatile ("" ::: "memory");
     for (i = 0, j = 0; i < 100000000; i++, j++) {
@@ -46,6 +46,7 @@ int main() {
     asm volatile ("" ::: "memory");
     end = trace_cpu_time_now();
     printf("Time passed: %ld\n", end - start);
+*/
 
     trace_manager_destroy(&g_trace_manager);
 
