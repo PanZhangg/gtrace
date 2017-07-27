@@ -531,11 +531,11 @@ stop_record_##name: ;
         } \
     } while(0)
 
-/* TODO */
-//#define FOR_EACH_BUFFER_PER_TP
-
 /*
  * Set a monitor point
+ *
+ * This kind of points are used to store the current value of
+ * an interested element
  *
  * @arg name is the value one would like to
  * monitor
@@ -554,6 +554,17 @@ stop_record_##name: ;
         *(typeof(name) *)(&mp##name->data) = name; \
         stop_record_##name:
 
+/*
+ * Set a perf point
+ *
+ * This kind of points are used to measure
+ * the frequency of execution of interested elements
+ *
+ * @name: an unique name of this perf point
+ * @count: amount of the interested element executed once,
+ *  say, 1 or 5 packets once
+ * @unit: performance unit, e.g. pps/bps etc.
+ */
 #define SET_PERF_POINT(name, count, unit) \
         static __thread struct perf_point *mp##name = NULL; \
         if (unlikely(mp##name == NULL)) { \
@@ -566,5 +577,29 @@ stop_record_##name: ;
         uint32_t *_p = get_perf_point_data_block(mp##name); \
         *_p = (uint32_t)count; \
         stop_record_##name:
+
+/*
+ * Use a threshold to decrease the sampling frequency
+ * Handy to eliminate heavy measurement overhead when
+ * profiling high frequency executions
+ */
+#define SET_THRESHOLD_PERF_POINT(name, count, unit, threshold) \
+        static __thread struct perf_point *mp##name = NULL; \
+        if (unlikely(mp##name == NULL)) { \
+            mp##name = perf_point_create(#name); \
+            if (mp##name == NULL) { \
+                goto STOP_RECORD_LABEL(name); \
+            } \
+            set_perf_point(mp##name, __FILE__, __LINE__, __func__, #name, #unit); \
+        } \
+        static uint32_t name##sub_total; \
+        name##sub_total += count; \
+        if (name##sub_total >= threshold) { \
+            uint32_t *_p = get_perf_point_data_block(mp##name); \
+            *_p = (uint32_t)name##sub_total; \
+            name##sub_total = 0; \
+        } \
+        stop_record_##name:
+
 
 #endif
