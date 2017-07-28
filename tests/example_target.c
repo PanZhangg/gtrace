@@ -12,14 +12,14 @@ int main() {
     uint64_t start = trace_cpu_time_now();
     asm volatile ("" ::: "memory");
     for (i = 0, j = 0; i < 100000000; i++, j++) {
-    /*
         SET_TRIGGER_TRACE_POINT(4, "user_defined_struct", example_tp,
                                 struct user_defined_struct, user_trigger_fn,
                                 user_record_fn, i, j);
-                                */
+        /*
         SET_TRACE_POINT(4, "user_defined_struct", example_tp,
                         struct user_defined_struct,
                         user_record_fn, i, j);
+                        */
     }
     asm volatile ("" ::: "memory");
     uint64_t end = trace_cpu_time_now();

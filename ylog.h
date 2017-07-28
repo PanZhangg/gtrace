@@ -174,7 +174,6 @@ struct trace_point {
      * due to elimination of false-sharing
      */
     uint64_t read_seq;
-
 };
 
 struct trace_event {
@@ -371,7 +370,6 @@ get_data_block(struct trace_point *tp);
 void *
 get_prev_data_block(struct trace_point *tp);
 
-
 /*
  * Get the first trace point in the
  * bucket of the tp_register_map
@@ -379,6 +377,13 @@ get_prev_data_block(struct trace_point *tp);
  */
 struct trace_point *
 get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
+
+/*
+ * Get the life cycle of an object stores in
+ * one trace point and its track
+ */
+struct shared_mem_block **
+get_life_cycle(struct trace_point *tp);
 
 struct monitor_point *
 monitor_point_create(char *name);
@@ -431,7 +436,7 @@ get_perf_point_data_block(struct perf_point *pp);
                 goto STOP_RECORD_LABEL(name); \
             } \
             set_trace_point(name, track, format, \
-                           __FILE__, __LINE__, __func__); \
+                            __FILE__, __LINE__, __func__); \
             ENABLE_TP(name); \
         } \
         type *ptr = NULL; \
@@ -458,7 +463,7 @@ get_perf_point_data_block(struct perf_point *pp);
                 goto STOP_RECORD_LABEL(name); \
             } \
             set_trace_point(name, track, format, \
-                           __FILE__, __LINE__, __func__); \
+                            __FILE__, __LINE__, __func__); \
             name->tr_fn = usr_tr_fn; \
             ENABLE_TP(name); \
         } \

@@ -10,7 +10,6 @@
 
 struct trace_manager *g_trace_manager = NULL;
 
-
 uint64_t
 trace_cpu_time_now(void)
 {
@@ -314,6 +313,21 @@ get_prev_buffer_block(struct trace_point *tp)
     uint64_t seq = tp->event_seq - 1;
     uint32_t prev_index = seq % CIRCULAR_BUFFER_SIZE;
     return (&tp->target_buffer[prev_index]);
+}
+
+static struct shared_mem_block *
+get_last_buffer_block(struct trace_point *tp)
+{
+    uint64_t seq = tp->event_seq;
+    uint32_t prev_index = seq % CIRCULAR_BUFFER_SIZE;
+    return (&tp->target_buffer[prev_index]);
+}
+
+struct shared_mem_block **
+get_life_cycle(struct trace_point *tp)
+{
+    /* TODO */
+    return NULL;
 }
 
 void *
