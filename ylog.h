@@ -18,7 +18,7 @@
 #define SHM_KEY 4552
 
 /*===========================
- * gtrace viewer global variable
+ * gtrace viewer global variables
  *==========================*/
 
 #define OUTPUT_BUFFER_MAX_SIZE 1024
@@ -26,11 +26,10 @@ char g_output_buffer[OUTPUT_BUFFER_MAX_SIZE];
 
 extern struct trace_manager *g_trace_manager;
 
-uint64_t
-trace_cpu_time_now(void);
+uint64_t trace_cpu_time_now(void);
 
 double
-get_cpu_mhz(void);
+ get_cpu_mhz(void);
 
 /*
  * function pointer for view process to retrieve
@@ -41,7 +40,7 @@ get_cpu_mhz(void);
  *  Any specific content one would like to pass
  *  out of the function, used for trigger normally
  */
-typedef void (*content_retrieve)(void *addr, void *content);
+typedef void (*content_retrieve) (void *addr, void *content);
 
 /*
  * function pointer for target process to decide
@@ -52,9 +51,11 @@ typedef void (*content_retrieve)(void *addr, void *content);
  * @return
  *   if triggered 1, not 0
  */
-typedef int (*is_triggered_fn)(void *arg);
+typedef int (*is_triggered_fn) (void *arg);
 
-/* Branch prediction*/
+/*
+ * Branch prediction
+ */
 #ifndef unlikely
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
@@ -70,11 +71,15 @@ typedef int (*is_triggered_fn)(void *arg);
 #define TRACE_POINT_LOCATION_LEN 32
 #define TRACE_TYPE_FORMAT_LEN 32
 
-/* Together with the 8 bytes data makes 64 bytes */
+/*
+ * Together with the 8 bytes data makes 64 bytes 
+ */
 #define MONITOR_POINT_STRING_BUFFER_LEN 56
 #define MP_LIST_LEN 256
 
-/* 50 + tigger_times(8) + unit(8) = 64 bytes */
+/*
+ * 50 + tigger_times(8) + unit(8) = 64 bytes 
+ */
 #define PERF_POINT_STRING_BUFFER_LEN 48
 #define PERF_POINT_DATA_LEN 128
 #define PERF_POINT_LIST_LEN 256
@@ -102,10 +107,14 @@ struct trace_type {
 };
 
 struct trace_point {
-    /* First Cache Line*/
+    /*
+     * First Cache Line
+     */
     uint8_t is_enabled;
 
-    /* Index of this TP in trace_point_list as well*/
+    /*
+     * Index of this TP in trace_point_list as well
+     */
     uint32_t trace_point_id;
 
     /*
@@ -126,7 +135,9 @@ struct trace_point {
      */
     uint32_t trigger_id;
 
-    /* Increment per event */
+    /*
+     * Increment per event 
+     */
     uint64_t event_seq;
     /*
      * addr of the circular buffer belonging to this tp
@@ -150,7 +161,9 @@ struct trace_point {
      */
     uint32_t event_left;
 
-    /* Timestamp when first triggered*/
+    /*
+     * Timestamp when first triggered
+     */
     uint64_t first_triggered_time;
 
     /*
@@ -159,27 +172,37 @@ struct trace_point {
      */
     content_retrieve cr_fn;
 
-    /* Type format of the recorded data*/
+    /*
+     * Type format of the recorded data
+     */
     struct trace_type type;
 
-    /* ID of the thread executed through this TP*/
+    /*
+     * ID of the thread executed through this TP
+     */
     pthread_t pthread_id;
 
     char name[TRACE_POINT_NAME_LEN];
 
-    /* Location of TP,__FILE__, __LINE__, __func__*/
+    /*
+     * Location of TP,__FILE__, __LINE__, __func__
+     */
     char location[TRACE_POINT_LOCATION_LEN];
-    /* Increment per read
-     * has to be apart with seq_event
-     * due to elimination of false-sharing
+    /*
+     * Increment per read has to be apart with seq_event due to elimination of 
+     * false-sharing 
      */
     uint64_t read_seq;
 };
 
 struct trace_event {
-    /* ID of the TP recorded this event */
+    /*
+     * ID of the TP recorded this event 
+     */
     uint32_t trace_point_id;
-    /* Absolute time stamp in CPU clock cycles. */
+    /*
+     * Absolute time stamp in CPU clock cycles. 
+     */
     uint64_t timestamp;
 };
 
@@ -217,28 +240,37 @@ struct trace_manager {
     uint32_t monitor_point_num;
     uint32_t perf_point_num;
 
-    /* Mask of trace_point_list to indicate enabled ones*/
+    /*
+     * Mask of trace_point_list to indicate enabled ones
+     */
     uint8_t enabled_trace_point_mask[ENABLED_MASK_LEN];
 
     double cpu_freq_mhz;
 
-    /* List to store trace points*/
+    /*
+     * List to store trace points
+     */
     struct trace_point trace_point_list[TRACE_POINT_LIST_SIZE];
 
-    /* Circular buffer*/
+    /*
+     * Circular buffer
+     */
     struct shared_mem_block buffer[TRACE_POINT_LIST_SIZE][CIRCULAR_BUFFER_SIZE]
-    __attribute__((aligned(64)));
+        __attribute__ ((aligned(64)));
 
-    /* Monitor points buffer */
+    /*
+     * Monitor points buffer 
+     */
     struct monitor_point mp_list[MP_LIST_LEN]
-    __attribute__((aligned(64)));
+        __attribute__ ((aligned(64)));
 
-    /* Perf points buffer */
+    /*
+     * Perf points buffer 
+     */
     struct perf_point perf_list[PERF_POINT_LIST_LEN]
-    __attribute__((aligned(64)));
+        __attribute__ ((aligned(64)));
 
-}__attribute__((aligned(64)));
-
+} __attribute__ ((aligned(64)));
 
 /*
  * Init trace_manager including the circular
@@ -254,11 +286,10 @@ struct trace_manager {
  *     is g_trace_manager
  */
 void
-trace_manager_init(uint32_t key);
+ trace_manager_init(uint32_t key);
 
 void
-trace_manager_destroy(struct trace_manager **);
-
+ trace_manager_destroy(struct trace_manager **);
 
 /*
  * Connect to the shared memory created by
@@ -271,9 +302,7 @@ trace_manager_destroy(struct trace_manager **);
  *     Pointer to the trace_manager existing in
  *     the shared memory aka g_trace_manager
  */
-struct trace_manager *
-trace_manager_connect(uint32_t key);
-
+struct trace_manager *trace_manager_connect(uint32_t key);
 
 /*
  * Create a trace point
@@ -283,9 +312,7 @@ trace_manager_connect(uint32_t key);
  * @return
  *     pointer to the newly created trace point
  */
-struct trace_point *
-trace_point_create(const char *name);
-
+struct trace_point *trace_point_create(const char *name);
 
 /*
  * set trace point in interested location
@@ -303,16 +330,15 @@ trace_point_create(const char *name);
  *    void
  */
 void
+
 set_trace_point(struct trace_point *tp, uint32_t track, const char *format,
                 const char *file, const int line, const char *func);
 
+void
+ register_content_retrieve_fn(struct trace_point *tp, content_retrieve fn);
 
 void
-register_content_retrieve_fn(struct trace_point *tp, content_retrieve fn);
-
-void
-register_trigger_fn(struct trace_point *tp, is_triggered_fn fn);
-
+ register_trigger_fn(struct trace_point *tp, is_triggered_fn fn);
 
 /*
  * Return all trace points which share the same type
@@ -320,8 +346,9 @@ register_trigger_fn(struct trace_point *tp, is_triggered_fn fn);
  * If none, return NULL
  */
 void
+
 find_tp_by_type(struct trace_manager *tm,
-                const char *type, struct trace_point **tps, uint32_t *num);
+                const char *type, struct trace_point **tps, uint32_t * num);
 
 /*
  * Return all trace points which share the same track
@@ -329,8 +356,9 @@ find_tp_by_type(struct trace_manager *tm,
  * If none, return NULL
  */
 void
+
 find_tp_by_track(struct trace_manager *tm,
-                 uint32_t track, struct trace_point **tps, uint32_t *num);
+                 uint32_t track, struct trace_point **tps, uint32_t * num);
 
 /*
  * List all trace points existing
@@ -339,19 +367,19 @@ find_tp_by_track(struct trace_manager *tm,
  * Print each point's information formatlly
  */
 void
-list_all_trace_point(struct trace_manager *tm, char **output);
+ list_all_trace_point(struct trace_manager *tm, char **output);
 
 void
-list_enabled_trace_point(struct trace_manager *tm, char **output);
+ list_enabled_trace_point(struct trace_manager *tm, char **output);
 
 void
-list_disabled_trace_point(struct trace_manager *tm, char **output);
+ list_disabled_trace_point(struct trace_manager *tm, char **output);
 
 /*
  * list num trace point(s) in tps
  */
 void
-list_point(struct trace_point **tps, uint32_t num, char **output);
+ list_point(struct trace_point **tps, uint32_t num, char **output);
 
 /*
  * Get mem block address of a trace point
@@ -364,43 +392,39 @@ list_point(struct trace_point **tps, uint32_t num, char **output);
  *    block which can be converted to any
  *    user appreciated data types
  */
-void *
-get_data_block(struct trace_point *tp);
+void *get_data_block(struct trace_point *tp);
 
-void *
-get_prev_data_block(struct trace_point *tp);
+void *get_prev_data_block(struct trace_point *tp);
 
 /*
  * Get the first trace point in the
  * bucket of the tp_register_map
  * If there's no tp, return NULL
  */
-struct trace_point *
-get_first_tp_by_track(struct trace_manager *tm, uint32_t track);
+struct trace_point *get_first_tp_by_track(struct trace_manager *tm,
+                                          uint32_t track);
 
 /*
  * Get the life cycle of an object stores in
  * one trace point and its track
  */
-struct shared_mem_block **
-get_life_cycle(struct trace_point *tp);
+struct shared_mem_block **get_life_cycle(struct trace_point *tp);
 
-struct monitor_point *
-monitor_point_create(char *name);
+struct monitor_point *monitor_point_create(char *name);
 
 void
+
 set_monitor_point(struct monitor_point *mp, const char *file, const int line,
                   const char *func, const char *name);
 
-struct perf_point *
-perf_point_create(char *name);
+struct perf_point *perf_point_create(char *name);
 
 void
-set_perf_point(struct perf_point *pp, const char *file, const int line,
-                  const char *func, const char *name, const char *unit);
 
-uint32_t *
-get_perf_point_data_block(struct perf_point *pp);
+set_perf_point(struct perf_point *pp, const char *file, const int line,
+               const char *func, const char *name, const char *unit);
+
+uint32_t *get_perf_point_data_block(struct perf_point *pp);
 
 #define TP_IS_ENABLED(tp) ( tp->is_enabled )
 
@@ -605,6 +629,5 @@ stop_record_##name: ;
             name##sub_total = 0; \
         } \
         stop_record_##name:
-
 
 #endif
