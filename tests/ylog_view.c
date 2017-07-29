@@ -37,9 +37,10 @@ int last_display_index, currently_displayed_index;
 struct processtop *selected_process = NULL;
 int selected_ret;
 
-int selected_line = 0; /* select bar position */
-int selected_in_list = 0; /* selection relative to the whole list */
-int list_offset = 0; /* first index in the list to display (scroll) */
+int selected_line = 0;          /* select bar position */
+int selected_in_list = 0;       /* selection relative to the whole list */
+int list_offset = 0;            /* first index in the list to display (scroll) 
+                                 */
 int nb_log_lines = 0;
 char log_lines[MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES];
 
@@ -52,10 +53,11 @@ int toggle_pause = -1;
 int filter_host_panel = 0;
 
 int max_center_lines;
-//struct header_view cputopview[6];
-//struct header_view iostreamtopview[3];
-//struct header_view fileview[3];
-//struct header_view kprobeview[2];
+
+// struct header_view cputopview[6];
+// struct header_view iostreamtopview[3];
+// struct header_view fileview[3];
+// struct header_view kprobeview[2];
 
 WINDOW *footer;
 WINDOW *header;
@@ -73,25 +75,25 @@ struct trace_manager *tm_view;
 pthread_t keyboard_thread;
 
 static void
-display_trace_points(struct trace_manager *tm, char **output);
+ display_trace_points(struct trace_manager *tm, char **output);
 
 static void
-display_monitor_points(struct trace_manager *tm, int *ch);
+ display_monitor_points(struct trace_manager *tm, int *ch);
 
 static void
-display_perf_points(struct trace_manager *tm, int *ch);
+ display_perf_points(struct trace_manager *tm, int *ch);
 
 static void
-update_footer(void);
+ update_footer(void);
 
 static void
-update_header(void);
+ update_header(void);
 
 static void
-print_digit(WINDOW *win, int digit);
+ print_digit(WINDOW * win, int digit);
 
 void
-print_log(char *str);
+ print_log(char *str);
 
 static WINDOW *
 create_newwin(int height, int width, int starty, int startx)
@@ -106,26 +108,12 @@ create_newwin(int height, int width, int starty, int startx)
     return local_win;
 }
 
-/*
-static WINDOW *
-create_newwin_no_border(int height, int width, int starty, int startx)
-{
-    WINDOW *local_win;
-
-    local_win = newwin(height, width, starty, startx);
-
-    wrefresh(local_win);
-
-    return local_win;
-}
-*/
-
 void
-set_window_title(WINDOW *win, char *title)
+set_window_title(WINDOW * win, char *title)
 {
-	wattron(win, A_BOLD);
-	mvwprintw(win, 0, 1, title);
-	wattroff(win, A_BOLD);
+    wattron(win, A_BOLD);
+    mvwprintw(win, 0, 1, title);
+    wattroff(win, A_BOLD);
 }
 
 static void
@@ -149,6 +137,7 @@ static void
 init_buffer_pointer(void)
 {
     int i = 0;
+
     for (; i < RETRIEVE_BUFFER_LENGTH; i++) {
         output_buffer[i] = retrieve_buffer[i];
     }
@@ -174,35 +163,37 @@ welcome()
         init_pair(6, COLOR_GREEN, COLOR_BLACK);
         init_pair(7, COLOR_RED, COLOR_YELLOW);
     }
-	termtype = getenv("TERM");
-	if (!strcmp(termtype, "xterm") ||  !strcmp(termtype, "xterm-color") ||
-			!strcmp(termtype, "vt220")) {
-		define_key("\033[H", KEY_HOME);
-		define_key("\033[F", KEY_END);
-		define_key("\033OP", KEY_F(1));
-		define_key("\033OQ", KEY_F(2));
-		define_key("\033OR", KEY_F(3));
-		define_key("\033OS", KEY_F(4));
-		define_key("\0330U", KEY_F(6));
-		define_key("\033[11~", KEY_F(1));
-		define_key("\033[12~", KEY_F(2));
-		define_key("\033[13~", KEY_F(3));
-		define_key("\033[14~", KEY_F(4));
-		define_key("\033[16~", KEY_F(6));
-		define_key("\033[17;2~", KEY_F(18));
-	}
+    termtype = getenv("TERM");
+    if (!strcmp(termtype, "xterm") || !strcmp(termtype, "xterm-color") ||
+        !strcmp(termtype, "vt220")) {
+        define_key("\033[H", KEY_HOME);
+        define_key("\033[F", KEY_END);
+        define_key("\033OP", KEY_F(1));
+        define_key("\033OQ", KEY_F(2));
+        define_key("\033OR", KEY_F(3));
+        define_key("\033OS", KEY_F(4));
+        define_key("\0330U", KEY_F(6));
+        define_key("\033[11~", KEY_F(1));
+        define_key("\033[12~", KEY_F(2));
+        define_key("\033[13~", KEY_F(3));
+        define_key("\033[14~", KEY_F(4));
+        define_key("\033[16~", KEY_F(6));
+        define_key("\033[17;2~", KEY_F(18));
+    }
 
-	signal(SIGTERM, handle_sigterm);
-	mousemask(BUTTON1_CLICKED, NULL);
-	refresh();
+    signal(SIGTERM, handle_sigterm);
+    mousemask(BUTTON1_CLICKED, NULL);
+    refresh();
 
     footer = create_newwin(FOOTER_HEIGHT, COLS - 1, LINES - 1, 0);
     header = create_newwin(HEADER_HEIGHT, COLS - 1, 0, 0);
-	center = create_newwin(LINES - WIN_HEIGHT_SUM_EXPECT_CENTER, COLS - 1,
+    center = create_newwin(LINES - WIN_HEIGHT_SUM_EXPECT_CENTER, COLS - 1,
                            HEADER_HEIGHT, 0);
-	status = create_newwin(STATUS_HEIGHT, COLS - 1, LINES - STATUS_HEIGHT - FOOTER_HEIGHT, 0);
+    status =
+        create_newwin(STATUS_HEIGHT, COLS - 1,
+                      LINES - STATUS_HEIGHT - FOOTER_HEIGHT, 0);
 
-	print_log("Trace Viewer Started\nPress F-key below");
+    print_log("Trace Viewer Started\nPress F-key below");
 
     main_panel = new_panel(center);
 
@@ -212,7 +203,7 @@ welcome()
 }
 
 static void
-print_digit(WINDOW *win, int digit)
+print_digit(WINDOW * win, int digit)
 {
     if (digit < 0) {
         wattron(win, COLOR_PAIR(1));
@@ -228,72 +219,78 @@ print_digit(WINDOW *win, int digit)
 }
 
 void
-print_digits(WINDOW *win, int first, int second)
+print_digits(WINDOW * win, int first, int second)
 {
-	wprintw(win, "(");
-	print_digit(win, first);
-	wprintw(win, ", ");
-	print_digit(win, second);
-	wprintw(win, ")");
+    wprintw(win, "(");
+    print_digit(win, first);
+    wprintw(win, ", ");
+    print_digit(win, second);
+    wprintw(win, ")");
 }
 
 void
 print_headers(int line, char *desc, int value, int first, int second)
 {
-	wattron(header, A_BOLD);
-	mvwprintw(header, line, 4, "%s", desc);
-	wattroff(header, A_BOLD);
-	mvwprintw(header, line, 16, "%d", value);
-	wmove(header, line, 24);
-	print_digits(header, first, second);
-	wmove(header, line, 40);
+    wattron(header, A_BOLD);
+    mvwprintw(header, line, 4, "%s", desc);
+    wattroff(header, A_BOLD);
+    mvwprintw(header, line, 16, "%d", value);
+    wmove(header, line, 24);
+    print_digits(header, first, second);
+    wmove(header, line, 40);
 }
 
 void
 print_log(char *str)
 {
-	int i;
-	int current_line = 1;
-	int current_char = 1;
-	char *tmp, *tmp2;
-	/* rotate the line buffer */
-	if (nb_log_lines >= MAX_LOG_LINES) {
-		tmp = strndup(log_lines, MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES);
-		tmp2 = strchr(tmp, '\n');
-		memset(log_lines, '\0', strlen(log_lines));
-		strncat(log_lines, tmp2 + 1, strlen(tmp2) - 1);
-		log_lines[strlen(log_lines)] = '\n';
-		log_lines[strlen(log_lines)] = '\0';
-		free(tmp);
-	}
-	nb_log_lines++;
+    int i;
+    int current_line = 1;
+    int current_char = 1;
+    char *tmp, *tmp2;
 
-	strncat(log_lines, str, MAX_LINE_LENGTH - 1);
-
-	if (nb_log_lines < MAX_LOG_LINES) {
-		log_lines[strlen(log_lines)] = '\n';
+    /*
+     * rotate the line buffer 
+     */
+    if (nb_log_lines >= MAX_LOG_LINES) {
+        tmp =
+            strndup(log_lines,
+                    MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES);
+        tmp2 = strchr(tmp, '\n');
+        memset(log_lines, '\0', strlen(log_lines));
+        strncat(log_lines, tmp2 + 1, strlen(tmp2) - 1);
+        log_lines[strlen(log_lines)] = '\n';
+        log_lines[strlen(log_lines)] = '\0';
+        free(tmp);
     }
-	log_lines[strlen(log_lines)] = '\0';
+    nb_log_lines++;
 
-	werase(status);
-	box(status, 0 , 0);
-	set_window_title(status, "Status");
-	for (i = 0; i < strlen(log_lines); i++) {
-		if (log_lines[i] == '\n') {
-			wmove(status, ++current_line, 1);
-			current_char = 1;
-		} else {
-			mvwprintw(status, current_line, current_char++, "%c",
-					log_lines[i]);
-		}
-	}
-	wrefresh(status);
+    strncat(log_lines, str, MAX_LINE_LENGTH - 1);
+
+    if (nb_log_lines < MAX_LOG_LINES) {
+        log_lines[strlen(log_lines)] = '\n';
+    }
+    log_lines[strlen(log_lines)] = '\0';
+
+    werase(status);
+    box(status, 0, 0);
+    set_window_title(status, "Status");
+    for (i = 0; i < strlen(log_lines); i++) {
+        if (log_lines[i] == '\n') {
+            wmove(status, ++current_line, 1);
+            current_char = 1;
+        } else {
+            mvwprintw(status, current_line, current_char++, "%c",
+                      log_lines[i]);
+        }
+    }
+    wrefresh(status);
 }
 
 static void
-print_key(WINDOW *win, char *key, char *desc, int toggle)
+print_key(WINDOW * win, char *key, char *desc, int toggle)
 {
     int pair;
+
     if (toggle > 0) {
         pair = 4;
     } else {
@@ -342,6 +339,7 @@ struct trace_manager *
 ylog_view_init()
 {
     struct trace_manager *tm = trace_manager_connect(SHM_KEY);
+
     return tm;
 }
 
@@ -349,11 +347,11 @@ static void
 display_about_info(void)
 {
     wattron(center, A_BOLD);
-    mvwprintw(center, 2 , 4, "Gtrace is a panacea to make your life easier");
-	wattroff(center, A_BOLD);
-    mvwprintw(center, 4 , 4, "Version: 17.07");
-    mvwprintw(center, 5 , 4, "Author: Pan Zhang");
-    mvwprintw(center, 6 , 4, "Email: dazhangpan@gmail.com");
+    mvwprintw(center, 2, 4, "Gtrace is a panacea to make your life easier");
+    wattroff(center, A_BOLD);
+    mvwprintw(center, 4, 4, "Version: 17.07");
+    mvwprintw(center, 5, 4, "Author: Pan Zhang");
+    mvwprintw(center, 6, 4, "Email: dazhangpan@gmail.com");
 }
 
 void *
@@ -363,32 +361,32 @@ handle_keyboard(void *arg)
 
     while ((ch = getch())) {
 begin:
-        switch(ch) {
-            case KEY_F(2):
-                werase(center);
-                box(center, 0, 0);
-                set_window_title(center, "Trace Points");
-                display_trace_points(tm_view, output_buffer);
-	            print_log("Display Trace Points");
-                break;
-            case KEY_F(3):
-                print_log("Display Perf Stats");
-                display_perf_points(tm_view, &ch);
-                goto begin;
-            case KEY_F(4):
-                print_log("Display Status Monitor");
-                display_monitor_points(tm_view, &ch);
-                goto begin;
-            case KEY_F(11):
-                werase(center);
-                box(center, 0, 0);
-                set_window_title(center, "About");
-                display_about_info();
-                wrefresh(center);
-                print_log("About Trace Viewer");
-                break;
-            default:
-                break;
+        switch (ch) {
+        case KEY_F(2):
+            werase(center);
+            box(center, 0, 0);
+            set_window_title(center, "Trace Points");
+            display_trace_points(tm_view, output_buffer);
+            print_log("Display Trace Points");
+            break;
+        case KEY_F(3):
+            print_log("Display Perf Stats");
+            display_perf_points(tm_view, &ch);
+            goto begin;
+        case KEY_F(4):
+            print_log("Display Status Monitor");
+            display_monitor_points(tm_view, &ch);
+            goto begin;
+        case KEY_F(11):
+            werase(center);
+            box(center, 0, 0);
+            set_window_title(center, "About");
+            display_about_info();
+            wrefresh(center);
+            print_log("About Trace Viewer");
+            break;
+        default:
+            break;
         }
     }
     return NULL;
@@ -398,29 +396,33 @@ static void
 display_monitor_points(struct trace_manager *tm, int *ch)
 {
     do {
-            werase(center);
-            box(center, 0, 0);
-            set_window_title(center, "Status Monitor");
-            int i = 0;
-            mvwprintw(center, 1, 2, "%s", "Monitor Points");
-            mvwprintw(center, 2, 2, "%s", "=======================================");
-            for(; i < tm->monitor_point_num; i++) {
-                if (tm->mp_list[i].data < 100000) {
-                    //wattron(center, COLOR_PAIR(4));
-                    mvwprintw(center, 3 + i, 2, "%s:%lld", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
-                    //wattroff(center, COLOR_PAIR(4));
-                } else {
-                    //wattron(center, COLOR_PAIR(1));
-                    mvwprintw(center, 3 + i, 2, "%s:%lld", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
-                    //wattroff(center, COLOR_PAIR(1));
-                }
+        werase(center);
+        box(center, 0, 0);
+        set_window_title(center, "Status Monitor");
+        int i = 0;
+
+        mvwprintw(center, 1, 2, "%s", "Monitor Points");
+        mvwprintw(center, 2, 2, "%s",
+                  "=======================================");
+        for (; i < tm->monitor_point_num; i++) {
+            if (tm->mp_list[i].data < 100000) {
+                // wattron(center, COLOR_PAIR(4));
+                mvwprintw(center, 3 + i, 2, "%s:%lld",
+                          tm->mp_list[i].string_buffer, tm->mp_list[i].data);
+                // wattroff(center, COLOR_PAIR(4));
+            } else {
+                // wattron(center, COLOR_PAIR(1));
+                mvwprintw(center, 3 + i, 2, "%s:%lld",
+                          tm->mp_list[i].string_buffer, tm->mp_list[i].data);
+                // wattroff(center, COLOR_PAIR(1));
             }
-            wrefresh(center);
-            *ch = getch();
-            if (CHECK_F_KEYS(ch)) {
-                break;
-            }
-            usleep(500);
+        }
+        wrefresh(center);
+        *ch = getch();
+        if (CHECK_F_KEYS(ch)) {
+            break;
+        }
+        usleep(500);
     } while (1);
 }
 
@@ -442,14 +444,15 @@ perf_point_avg_value(struct perf_point *pp)
         last_index = pp->trigger_times - 1;
         first_index = 0;
     }
-    for(; i < index; i++) {
+    for (; i < index; i++) {
         sum += pp->data[i].count;
     }
 
     uint64_t cycles = pp->data[last_index].timestamp -
-                      pp->data[first_index].timestamp;
+        pp->data[first_index].timestamp;
 
     float time = (float)cycles / (cpu_mhz * 1000000);
+
     return ((double)sum / time);
 }
 
@@ -457,23 +460,27 @@ static void
 display_perf_points(struct trace_manager *tm, int *ch)
 {
     do {
-            werase(center);
-            box(center, 0, 0);
-            set_window_title(center, "Perf Stats");
-            int i = 0;
-            mvwprintw(center, 1, 2, "%s", "Perf Points");
-            mvwprintw(center, 2, 2, "%s", "=======================================");
-            for(; i < tm->perf_point_num; i++) {
-                float avg = perf_point_avg_value(&tm->perf_list[i]);
-                mvwprintw(center, 3 + i, 2, "%s:%f %s", tm->perf_list[i].string_buffer, avg,
-                          tm->perf_list[i].unit);
-            }
-            wrefresh(center);
-            *ch = getch();
-            if (CHECK_F_KEYS(ch)) {
-                break;
-            }
-            usleep(500);
+        werase(center);
+        box(center, 0, 0);
+        set_window_title(center, "Perf Stats");
+        int i = 0;
+
+        mvwprintw(center, 1, 2, "%s", "Perf Points");
+        mvwprintw(center, 2, 2, "%s",
+                  "=======================================");
+        for (; i < tm->perf_point_num; i++) {
+            float avg = perf_point_avg_value(&tm->perf_list[i]);
+
+            mvwprintw(center, 3 + i, 2, "%s:%f %s",
+                      tm->perf_list[i].string_buffer, avg,
+                      tm->perf_list[i].unit);
+        }
+        wrefresh(center);
+        *ch = getch();
+        if (CHECK_F_KEYS(ch)) {
+            break;
+        }
+        usleep(500);
     } while (1);
 }
 
@@ -489,7 +496,8 @@ display_trace_points(struct trace_manager *tm, char **output)
     set_window_title(center, "Trace Points");
 
     int i = 0;
-    for(; i < 5; i++) {
+
+    for (; i < 5; i++) {
         mvwprintw(center, 1 + i, 2, output[i]);
     }
     wrefresh(center);
@@ -503,26 +511,30 @@ main()
     cpu_mhz = get_cpu_mhz();
 
     tm_view = ylog_view_init();
-/*
- * TODO:register callback func automatically
- */
-    REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(tm_view, "user_defined_struct", user_view_fn);
+    /*
+     * TODO:register callback func automatically
+     */
+    REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(tm_view, "user_defined_struct",
+                                          user_view_fn);
     REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(tm_view, "time_trace", time_view_fn);
 
     welcome();
 
     int i, j, lines;
+
     lines = 0;
-	struct trace_point *tp = get_first_tp_by_track(tm_view, 4);
+    struct trace_point *tp = get_first_tp_by_track(tm_view, 4);
+
     for (i = 0; i < 10; i++) {
         if (tp->cr_fn) {
-            mvwprintw(center, 2 * lines + 1, 1, "timestamp: %ld", tp->view_buffer[i].event.timestamp);
+            mvwprintw(center, 2 * lines + 1, 1, "timestamp: %ld",
+                      tp->view_buffer[i].event.timestamp);
             RETRIEVE_TP_CONTENT(tp, i, &j);
             mvwprintw(center, 2 * lines + 2, 1, "j is %d", j);
             lines++;
         }
     }
-	wrefresh(center);
+    wrefresh(center);
 
     pthread_create(&keyboard_thread, NULL, handle_keyboard, NULL);
 

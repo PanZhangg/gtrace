@@ -21,7 +21,8 @@ trace_cpu_time_now(void)
         };
     } tsc;
 
-    asm volatile ("rdtsc":"=a" (tsc.lo), "=d" (tsc.hi));
+    asm volatile ("rdtsc":"=a" (tsc.lo), "=d"(tsc.hi));
+
     return tsc.v;
 }
 
@@ -31,6 +32,7 @@ get_cpu_mhz(void)
     FILE *f;
     char buf[256];
     double mhz = 0.0;
+
     f = fopen("/proc/cpuinfo", "r");
     if (!f) {
         fprintf(stderr, "Can not open cpuinfo file\n");
@@ -39,8 +41,9 @@ get_cpu_mhz(void)
     while (fgets(buf, sizeof(buf), f)) {
         double m;
         int rc;
+
         rc = sscanf(buf, "cpu MHz : %lf", &m);
-        if ( rc > 0) {
+        if (rc > 0) {
             if (mhz == 0.0) {
                 mhz = m;
                 break;
@@ -55,12 +58,14 @@ static struct trace_manager *
 map_shm(uint32_t key)
 {
     struct trace_manager *tm;
+
     if (key <= 0) {
         fprintf(stderr, "value of key is less than zero\n");
         return NULL;
     }
-    key_t shm_key = (key_t)key;
+    key_t shm_key = (key_t) key;
     int shm_id = shmget(shm_key, sizeof(struct trace_manager), IPC_CREAT);
+
     if (shm_id == -1) {
         perror("shm create failed\n");
         return NULL;
@@ -79,7 +84,9 @@ trace_manager_init(uint32_t key)
     }
     memset(g_trace_manager, 0, sizeof(struct trace_manager));
 
-    /* Initialize value other than 0*/
+    /*
+     * Initialize value other than 0
+     */
     g_trace_manager->cpu_freq_mhz = get_cpu_mhz();
 }
 
@@ -101,6 +108,7 @@ static void
 tp_buffer_remap(struct trace_manager *tm)
 {
     int i = 0;
+
     for (; i < TRACE_POINT_LIST_SIZE; i++) {
         tm->trace_point_list[i].view_buffer = tm->buffer[i];
     }
@@ -110,6 +118,7 @@ struct trace_manager *
 trace_manager_connect(uint32_t key)
 {
     struct trace_manager *tm = map_shm(key);
+
     if (tm == NULL) {
         fprintf(stderr, "map shared memory failed\n");
         exit(0);
@@ -121,14 +130,17 @@ trace_manager_connect(uint32_t key)
 struct trace_point *
 trace_point_create(const char *name)
 {
-    /* starts from 0 */
-    uint32_t index = __sync_fetch_and_add(&g_trace_manager->trace_point_num, 1);
-    if (g_trace_manager->trace_point_num > TRACE_POINT_LIST_SIZE ) {
-        fprintf(stderr, "No more space, can not create trace point%s\n",
-                name);
+    /*
+     * starts from 0 
+     */
+    uint32_t index =
+        __sync_fetch_and_add(&g_trace_manager->trace_point_num, 1);
+    if (g_trace_manager->trace_point_num > TRACE_POINT_LIST_SIZE) {
+        fprintf(stderr, "No more space, can not create trace point%s\n", name);
         return NULL;
     }
-    struct trace_point* tp = &g_trace_manager->trace_point_list[index];
+    struct trace_point *tp = &g_trace_manager->trace_point_list[index];
+
     tp->trace_point_id = index;
     tp->track_id = 0;
     tp->event_left = CIRCULAR_BUFFER_SIZE / 2;
@@ -137,11 +149,13 @@ trace_point_create(const char *name)
     tp->tr_fn = NULL;
     tp->pthread_id = pthread_self();
     tp->event_seq = 0;
-    tp->target_buffer = (struct shared_mem_block *)&(g_trace_manager->buffer[index]);
+    tp->target_buffer =
+        (struct shared_mem_block *)&(g_trace_manager->buffer[index]);
     tp->first_triggered_time = 0;
     uint32_t name_len = strlen(name);
+
     if (name_len >= TRACE_POINT_NAME_LEN) {
-       name_len = TRACE_POINT_NAME_LEN - 1;
+        name_len = TRACE_POINT_NAME_LEN - 1;
     }
     strncpy(tp->name, name, name_len);
     return tp;
@@ -153,6 +167,7 @@ set_trace_point(struct trace_point *tp, uint32_t track, const char *format,
 {
     tp->track_id = track;
     uint8_t format_len = strlen(format);
+
     if (format_len >= TRACE_TYPE_FORMAT_LEN) {
         format_len = TRACE_TYPE_FORMAT_LEN - 1;
         fprintf(stderr, "Format buffer too short!");
@@ -177,7 +192,7 @@ register_trigger_fn(struct trace_point *tp, is_triggered_fn fn)
 
 void
 find_tp_by_type(struct trace_manager *tm,
-                const char *type, struct trace_point **tps, uint32_t *num)
+                const char *type, struct trace_point **tps, uint32_t * num)
 {
     if (tps == NULL || num == NULL) {
         fprintf(stderr, "invalid parameter for return\n");
@@ -185,11 +200,11 @@ find_tp_by_type(struct trace_manager *tm,
     }
     int i = 0;
     uint32_t tmp_num = 0;
-    for(; i < tm->trace_point_num; i++){
-        if (!strcmp((const char *)tm->
-                   trace_point_list[i].type.format, type)) {
-           tps[tmp_num] = &tm->trace_point_list[i];
-           tmp_num++;
+
+    for (; i < tm->trace_point_num; i++) {
+        if (!strcmp((const char *)tm->trace_point_list[i].type.format, type)) {
+            tps[tmp_num] = &tm->trace_point_list[i];
+            tmp_num++;
         }
     }
     *num = tmp_num;
@@ -197,7 +212,7 @@ find_tp_by_type(struct trace_manager *tm,
 
 void
 find_tp_by_track(struct trace_manager *tm,
-                 uint32_t track, struct trace_point **tps, uint32_t *num)
+                 uint32_t track, struct trace_point **tps, uint32_t * num)
 {
     if (tps == NULL || num == NULL) {
         fprintf(stderr, "invalid parameter for return\n");
@@ -205,10 +220,11 @@ find_tp_by_track(struct trace_manager *tm,
     }
     int i = 0;
     uint32_t tmp_num = 0;
-    for(; i < tm->trace_point_num; i++){
+
+    for (; i < tm->trace_point_num; i++) {
         if (track == tm->trace_point_list[i].track_id) {
-           tps[tmp_num] = &tm->trace_point_list[i];
-           tmp_num++;
+            tps[tmp_num] = &tm->trace_point_list[i];
+            tmp_num++;
         }
     }
     *num = tmp_num;
@@ -217,13 +233,12 @@ find_tp_by_track(struct trace_manager *tm,
 void static
 print_trace_point(struct trace_point *tp, char *output)
 {
-    static char *status_string[2] = {"Disabled", "Enabled"};
+    static char *status_string[2] = { "Disabled", "Enabled" };
     sprintf(output, "TP_ID: %4d\t%8s\t%6s\t%5d\t%13ld\t%s",
             tp->trace_point_id, tp->name,
             status_string[tp->is_enabled], tp->track_id,
             tp->event_seq, tp->location);
 }
-
 
 #define TITLE_LINES 2
 #define PRINT_TRACE_POINT_TABLE_FIRST_LINE \
@@ -236,7 +251,8 @@ list_all_trace_point(struct trace_manager *tm, char **output)
 {
     PRINT_TRACE_POINT_TABLE_FIRST_LINE;
     int i = 0;
-        for(; i < tm->trace_point_num; i++){
+
+    for (; i < tm->trace_point_num; i++) {
         print_trace_point(&tm->trace_point_list[i], output[TITLE_LINES + i]);
     }
 }
@@ -250,16 +266,20 @@ list_en_dis_trace_point(struct trace_manager *tm, uint8_t is_enable,
 {
     PRINT_TRACE_POINT_TABLE_FIRST_LINE;
     int i = 0;
-    for(; i < tm->trace_point_num; i++){
+
+    for (; i < tm->trace_point_num; i++) {
         uint32_t index = i / 8;
         uint32_t mod = i % 8;
+
         if (is_enable) {
             if (CHECK_ENABLE_MASK_BIT(tm, index, mod)) {
-                print_trace_point(&tm->trace_point_list[i], output[i + TITLE_LINES]);
+                print_trace_point(&tm->trace_point_list[i],
+                                  output[i + TITLE_LINES]);
             }
         } else {
             if (!CHECK_ENABLE_MASK_BIT(tm, index, mod)) {
-                print_trace_point(&tm->trace_point_list[i], output[i + TITLE_LINES]);
+                print_trace_point(&tm->trace_point_list[i],
+                                  output[i + TITLE_LINES]);
             }
         }
     }
@@ -286,7 +306,8 @@ list_point(struct trace_point **tps, uint32_t num, char **output)
         return;
     }
     int i = 0;
-    for(; i < num; i++) {
+
+    for (; i < num; i++) {
         if (tps[i] != NULL) {
             print_trace_point(tps[i], output[i + TITLE_LINES]);
         } else {
@@ -304,6 +325,7 @@ get_next_buffer_block(struct trace_point *tp)
      */
     tp->event_seq++;
     uint32_t next_index = tp->event_seq % CIRCULAR_BUFFER_SIZE;
+
     return (&tp->target_buffer[next_index]);
 }
 
@@ -312,6 +334,7 @@ get_prev_buffer_block(struct trace_point *tp)
 {
     uint64_t seq = tp->event_seq - 1;
     uint32_t prev_index = seq % CIRCULAR_BUFFER_SIZE;
+
     return (&tp->target_buffer[prev_index]);
 }
 
@@ -320,13 +343,16 @@ get_last_buffer_block(struct trace_point *tp)
 {
     uint64_t seq = tp->event_seq;
     uint32_t prev_index = seq % CIRCULAR_BUFFER_SIZE;
+
     return (&tp->target_buffer[prev_index]);
 }
 
 struct shared_mem_block **
 get_life_cycle(struct trace_point *tp)
 {
-    /* TODO */
+    /*
+     * TODO 
+     */
     return NULL;
 }
 
@@ -334,6 +360,7 @@ void *
 get_data_block(struct trace_point *tp)
 {
     struct shared_mem_block *b = get_next_buffer_block(tp);
+
     b->event.trace_point_id = tp->trace_point_id;
     b->event.timestamp = trace_cpu_time_now();
     return (void *)b->data;
@@ -343,6 +370,7 @@ void *
 get_prev_data_block(struct trace_point *tp)
 {
     struct shared_mem_block *b = get_prev_buffer_block(tp);
+
     return (void *)b->data;
 }
 
@@ -350,7 +378,8 @@ struct trace_point *
 get_first_tp_by_track(struct trace_manager *tm, uint32_t track)
 {
     int i = 0;
-    for (; i < tm->trace_point_num ; i++) {
+
+    for (; i < tm->trace_point_num; i++) {
         if (tm->trace_point_list[i].track_id == track) {
             return &tm->trace_point_list[i];
         }
@@ -361,13 +390,15 @@ get_first_tp_by_track(struct trace_manager *tm, uint32_t track)
 struct monitor_point *
 monitor_point_create(char *name)
 {
-    uint32_t index = __sync_fetch_and_add(&g_trace_manager->monitor_point_num, 1);
+    uint32_t index =
+        __sync_fetch_and_add(&g_trace_manager->monitor_point_num, 1);
     if (g_trace_manager->monitor_point_num > MP_LIST_LEN) {
         fprintf(stderr, "No more space, can not create monitor point%s\n",
                 name);
         return NULL;
     }
     struct monitor_point *mp = &g_trace_manager->mp_list[index];
+
     return mp;
 }
 
@@ -383,29 +414,31 @@ struct perf_point *
 perf_point_create(char *name)
 {
     uint32_t index = __sync_fetch_and_add(&g_trace_manager->perf_point_num, 1);
+
     if (g_trace_manager->perf_point_num > PERF_POINT_LIST_LEN) {
-        fprintf(stderr, "No more space, can not create perf point%s\n",
-                name);
+        fprintf(stderr, "No more space, can not create perf point%s\n", name);
         return NULL;
     }
     struct perf_point *pp = &g_trace_manager->perf_list[index];
+
     return pp;
 }
 
 void
 set_perf_point(struct perf_point *pp, const char *file, const int line,
-                  const char *func, const char *name, const char *unit)
+               const char *func, const char *name, const char *unit)
 {
     snprintf(pp->string_buffer, sizeof(pp->string_buffer), "%s%s%s%s%s",
              file, ", ", func, ": ", name);
-    snprintf(pp->unit, sizeof(pp->unit),"%s", unit);
+    snprintf(pp->unit, sizeof(pp->unit), "%s", unit);
     pp->trigger_times = 0;
 }
 
 uint32_t *
 get_perf_point_data_block(struct perf_point *pp)
 {
-    struct perf_point_data *ppd = &pp->data[pp->trigger_times % PERF_POINT_DATA_LEN];
+    struct perf_point_data *ppd =
+        &pp->data[pp->trigger_times % PERF_POINT_DATA_LEN];
     pp->trigger_times++;
     ppd->timestamp = trace_cpu_time_now();
     return &ppd->count;
