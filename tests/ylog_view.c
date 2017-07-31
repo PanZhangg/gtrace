@@ -525,16 +525,18 @@ main()
     lines = 0;
     struct trace_point *tp = get_first_tp_by_track(tm_view, 4);
 
-    for (i = 0; i < 10; i++) {
-        if (tp->cr_fn) {
-            mvwprintw(center, 2 * lines + 1, 1, "timestamp: %ld",
-                      tp->view_buffer[i].event.timestamp);
-            RETRIEVE_TP_CONTENT(tp, i, &j);
-            mvwprintw(center, 2 * lines + 2, 1, "j is %d", j);
-            lines++;
+    if (tp != NULL) {
+        for (i = 0; i < 10; i++) {
+            if (tp->cr_fn) {
+                mvwprintw(center, 2 * lines + 1, 1, "timestamp: %ld",
+                          tp->view_buffer[i].event.timestamp);
+                RETRIEVE_TP_CONTENT(tp, i, &j);
+                mvwprintw(center, 2 * lines + 2, 1, "j is %d", j);
+                lines++;
+            }
         }
+        wrefresh(center);
     }
-    wrefresh(center);
 
     pthread_create(&keyboard_thread, NULL, handle_keyboard, NULL);
 
