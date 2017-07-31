@@ -4,7 +4,6 @@
 #include <string.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <ncurses.h>
 
 #define CACHE_LINE_BYTES 64
 
@@ -131,7 +130,7 @@ struct trace_point *
 trace_point_create(const char *name)
 {
     /*
-     * starts from 0 
+     * starts from 0
      */
     uint32_t index =
         __sync_fetch_and_add(&g_trace_manager->trace_point_num, 1);
@@ -230,7 +229,7 @@ find_tp_by_track(struct trace_manager *tm,
     *num = tmp_num;
 }
 
-void static
+static void
 print_trace_point(struct trace_point *tp, char *output)
 {
     static char *status_string[2] = { "Disabled", "Enabled" };
@@ -351,7 +350,7 @@ struct shared_mem_block **
 get_life_cycle(struct trace_point *tp)
 {
     /*
-     * TODO 
+     * TODO
      */
     return NULL;
 }
