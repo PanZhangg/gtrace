@@ -1,4 +1,5 @@
 #include <ncurses.h>
+#include <menu.h>
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -39,8 +40,7 @@ int selected_ret;
 
 int selected_line = 0;          /* select bar position */
 int selected_in_list = 0;       /* selection relative to the whole list */
-int list_offset = 0;            /* first index in the list to display (scroll) 
-                                 */
+int list_offset = 0;            /* first index in the list to display (scroll) */
 int nb_log_lines = 0;
 char log_lines[MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES];
 
@@ -64,6 +64,18 @@ WINDOW *header;
 WINDOW *center;
 WINDOW *status;
 
+char *choices[] = {
+    "Choice 1",
+    "Choice 2",
+    "Choice 3",
+    "Choice 4",
+    "Exit",
+    (char *)NULL,
+};
+
+ITEM **my_items;
+MENU *my_menu;
+
 PANEL *main_panel;
 
 char *termtype;
@@ -74,26 +86,21 @@ struct trace_manager *tm_view;
 
 pthread_t keyboard_thread;
 
-static void
- display_trace_points(struct trace_manager *tm, char **output);
+static void display_traces(void);
 
-static void
- display_monitor_points(struct trace_manager *tm, int *ch);
+static void display_trace_points(struct trace_manager *tm, char **output);
 
-static void
- display_perf_points(struct trace_manager *tm, int *ch);
+static void display_monitor_points(struct trace_manager *tm, int *ch);
 
-static void
- update_footer(void);
+static void display_perf_points(struct trace_manager *tm, int *ch);
 
-static void
- update_header(void);
+static void update_footer(void);
 
-static void
- print_digit(WINDOW * win, int digit);
+static void update_header(void);
 
-void
- print_log(char *str);
+static void print_digit(WINDOW * win, int digit);
+
+void print_log(char *str);
 
 static WINDOW *
 create_newwin(int height, int width, int starty, int startx)
@@ -249,7 +256,7 @@ print_log(char *str)
     char *tmp, *tmp2;
 
     /*
-     * rotate the line buffer 
+     * rotate the line buffer
      */
     if (nb_log_lines >= MAX_LOG_LINES) {
         tmp =
@@ -308,7 +315,8 @@ update_footer(void)
     werase(footer);
     wmove(footer, 1, 1);
 
-    print_key(footer, "F2", "TP", 1);
+    print_key(footer, "F1", "Trace", 1);
+    print_key(footer, "F2", "TP STATUS", 1);
     print_key(footer, "F3", "PERF", 1);
     print_key(footer, "F4", "STATUS", 1);
     print_key(footer, "F11", "ABOUT", 1);
@@ -352,6 +360,7 @@ display_about_info(void)
     mvwprintw(center, 4, 4, "Version: 17.07");
     mvwprintw(center, 5, 4, "Author: Pan Zhang");
     mvwprintw(center, 6, 4, "Email: dazhangpan@gmail.com");
+    wrefresh(center);
 }
 
 void *
@@ -362,6 +371,13 @@ handle_keyboard(void *arg)
     while ((ch = getch())) {
 begin:
         switch (ch) {
+        case KEY_F(1):
+            werase(center);
+            box(center, 0, 0);
+            set_window_title(center, "Traces");
+            display_traces();
+            print_log("Display Traces");
+            break;
         case KEY_F(2):
             werase(center);
             box(center, 0, 0);
@@ -382,7 +398,6 @@ begin:
             box(center, 0, 0);
             set_window_title(center, "About");
             display_about_info();
-            wrefresh(center);
             print_log("About Trace Viewer");
             break;
         default:
@@ -482,6 +497,58 @@ display_perf_points(struct trace_manager *tm, int *ch)
         }
         usleep(500);
     } while (1);
+}
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
+static void
+display_traces(void)
+{
+    int i = 0, c;
+    int n_choices = ARRAY_SIZE(choices);
+
+    my_items = (ITEM **) calloc(n_choices, sizeof(ITEM *));
+    for (i = 0; i < n_choices; ++i) {
+        my_items[i] = new_item(choices[i], choices[i]);
+    }
+
+    /*
+     * Create menu 
+     */
+    my_menu = new_menu((ITEM **) my_items);
+    set_menu_win(my_menu, center);
+    set_menu_sub(my_menu, derwin(center, 6, 38, 3, 1));
+
+    /*
+     * Set menu mark to the string " * " 
+     */
+    set_menu_mark(my_menu, " * ");
+    refresh();
+
+    /*
+     * Post the menu 
+     */
+    post_menu(my_menu);
+    wrefresh(center);
+    while ((c = getch()) != KEY_F(1)) {
+        switch (c) {
+        case KEY_DOWN:
+            menu_driver(my_menu, REQ_DOWN_ITEM);
+            break;
+        case KEY_UP:
+            menu_driver(my_menu, REQ_UP_ITEM);
+            break;
+        }
+        wrefresh(center);
+    }
+
+    /*
+     * Unpost and free all the memory taken up 
+     */
+    unpost_menu(my_menu);
+    free_menu(my_menu);
+    for (i = 0; i < n_choices; ++i)
+        free_item(my_items[i]);
 }
 
 static void
