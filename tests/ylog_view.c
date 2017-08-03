@@ -23,7 +23,7 @@
 
 #define CHECK_F_KEYS(ch) \
         ( *ch == KEY_F(2) || *ch == KEY_F(3) || *ch == KEY_F(4) || \
-          *ch == KEY_F(11) )
+          *ch == KEY_F(11)|| *ch == KEY_F(1) )
 
 char retrieve_buffer[RETRIEVE_BUFFER_LENGTH][RETRIEVE_BUFFER_SIZE];
 
@@ -40,7 +40,8 @@ int selected_ret;
 
 int selected_line = 0;          /* select bar position */
 int selected_in_list = 0;       /* selection relative to the whole list */
-int list_offset = 0;            /* first index in the list to display (scroll) */
+int list_offset = 0;            /* first index in the list to display (scroll) 
+                                 */
 int nb_log_lines = 0;
 char log_lines[MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES];
 
@@ -65,11 +66,18 @@ WINDOW *center;
 WINDOW *status;
 
 char *choices[] = {
-    "Choice 1",
-    "Choice 2",
-    "Choice 3",
-    "Choice 4",
-    "Exit",
+    "1",
+    "2",
+    "3",
+    "4",
+    (char *)NULL,
+};
+
+char *choice_names[] = {
+    "First",
+    "Second",
+    "Third",
+    "Fourth",
     (char *)NULL,
 };
 
@@ -86,7 +94,7 @@ struct trace_manager *tm_view;
 
 pthread_t keyboard_thread;
 
-static void display_traces(void);
+static void display_traces(int *ch);
 
 static void display_trace_points(struct trace_manager *tm, char **output);
 
@@ -375,9 +383,9 @@ begin:
             werase(center);
             box(center, 0, 0);
             set_window_title(center, "Traces");
-            display_traces();
             print_log("Display Traces");
-            break;
+            display_traces(&ch);
+            goto begin;
         case KEY_F(2):
             werase(center);
             box(center, 0, 0);
@@ -388,7 +396,6 @@ begin:
         case KEY_F(3):
             print_log("Display Perf Stats");
             display_perf_points(tm_view, &ch);
-            goto begin;
         case KEY_F(4):
             print_log("Display Status Monitor");
             display_monitor_points(tm_view, &ch);
@@ -502,53 +509,64 @@ display_perf_points(struct trace_manager *tm, int *ch)
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 static void
-display_traces(void)
+display_traces(int *ch)
 {
-    int i = 0, c;
+    int i = 0;
     int n_choices = ARRAY_SIZE(choices);
+    int select_item = 0;
 
     my_items = (ITEM **) calloc(n_choices, sizeof(ITEM *));
     for (i = 0; i < n_choices; ++i) {
-        my_items[i] = new_item(choices[i], choices[i]);
+        my_items[i] = new_item(choices[i], choice_names[i]);
     }
 
     /*
-     * Create menu 
+     * Create menu
      */
     my_menu = new_menu((ITEM **) my_items);
     set_menu_win(my_menu, center);
     set_menu_sub(my_menu, derwin(center, 6, 38, 3, 1));
 
     /*
-     * Set menu mark to the string " * " 
+     * Set menu mark to the string " > "
      */
-    set_menu_mark(my_menu, " * ");
+    set_menu_mark(my_menu, " > ");
     refresh();
 
     /*
-     * Post the menu 
+     * Post the menu
      */
     post_menu(my_menu);
     wrefresh(center);
-    while ((c = getch()) != KEY_F(1)) {
-        switch (c) {
+    do {
+        switch (*ch) {
         case KEY_DOWN:
             menu_driver(my_menu, REQ_DOWN_ITEM);
+            select_item++;
             break;
         case KEY_UP:
             menu_driver(my_menu, REQ_UP_ITEM);
+            if (select_item > 0) {
+                select_item--;
+            }
             break;
         }
         wrefresh(center);
-    }
+        *ch = getch();
+        if (CHECK_F_KEYS(ch)) {
+            break;
+        }
+        usleep(50);
+    } while (1);
 
     /*
-     * Unpost and free all the memory taken up 
+     * Unpost and free all the memory taken up
      */
     unpost_menu(my_menu);
     free_menu(my_menu);
-    for (i = 0; i < n_choices; ++i)
+    for (i = 0; i < n_choices; ++i) {
         free_item(my_items[i]);
+    }
 }
 
 static void
