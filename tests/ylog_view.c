@@ -678,8 +678,10 @@ display_traces(int *ch)
     unpost_menu(my_menu_second_level);
     free_menu(my_menu_first_level);
     free_menu(my_menu_second_level);
-    for (i = 0; i < n_choices; ++i) {
+    for (i = 0; i < tracks_num; ++i) {
         free_item(my_items_first_level[i]);
+    }
+    for (i = 0; i < n_choices; ++i) {
         free_item(my_items_second_level[i]);
     }
 }
