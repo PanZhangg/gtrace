@@ -508,6 +508,32 @@ display_perf_points(struct trace_manager *tm, int *ch)
     } while (1);
 }
 
+/*
+ * Find all tracks
+ */
+static void create_first_level_menu_items(void) __attribute__ ((unused));
+static void
+create_first_level_menu_items(void)
+{
+    /*
+     * TODO
+     */
+    return;
+}
+
+/*
+ * Find all trace points of one track
+ */
+static void create_second_level_menu_items(void) __attribute__ ((unused));
+static void
+create_second_level_menu_items(void)
+{
+    /*
+     * TODO
+     */
+    return;
+}
+
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 static void
@@ -516,6 +542,7 @@ display_traces(int *ch)
     int i = 0;
     int n_choices = ARRAY_SIZE(choices);
     int select_item = 0;
+    int select_menu = 0;
 
     my_items_first_level = (ITEM **) calloc(n_choices, sizeof(ITEM *));
     for (i = 0; i < n_choices; ++i) {
@@ -552,7 +579,7 @@ display_traces(int *ch)
      * Set menu mark to the string " > "
      */
     set_menu_mark(my_menu_first_level, " > ");
-    set_menu_mark(my_menu_second_level, " > ");
+    set_menu_mark(my_menu_second_level, " * ");
     refresh();
 
     /*
@@ -563,31 +590,57 @@ display_traces(int *ch)
 
     wrefresh(center);
 
+#define SELECT_FIRST_LEVEL_MENU 0
+#define SELECT_SECOND_LEVEL_MENU 1
+
     do {
         switch (*ch) {
         case KEY_DOWN:
-            menu_driver(my_menu_first_level, REQ_DOWN_ITEM);
+            if (select_menu == SELECT_FIRST_LEVEL_MENU) {
+                menu_driver(my_menu_first_level, REQ_DOWN_ITEM);
+            }
+            if (select_menu == SELECT_SECOND_LEVEL_MENU) {
+                menu_driver(my_menu_second_level, REQ_DOWN_ITEM);
+            }
             select_item++;
             break;
         case KEY_UP:
-            menu_driver(my_menu_first_level, REQ_UP_ITEM);
+            if (select_menu == SELECT_FIRST_LEVEL_MENU) {
+                menu_driver(my_menu_first_level, REQ_UP_ITEM);
+            }
+            if (select_menu == SELECT_SECOND_LEVEL_MENU) {
+                menu_driver(my_menu_second_level, REQ_UP_ITEM);
+            }
             if (select_item > 0) {
                 select_item--;
             }
             break;
         case KEY_LEFT:
-            menu_driver(my_menu_second_level, REQ_UP_ITEM);
+            if (select_menu == SELECT_SECOND_LEVEL_MENU) {
+                select_menu = SELECT_FIRST_LEVEL_MENU;
+            }
+            if (select_menu == SELECT_FIRST_LEVEL_MENU) {
+                menu_driver(my_menu_first_level, REQ_FIRST_ITEM);
+            }
             break;
         case KEY_RIGHT:
-            menu_driver(my_menu_first_level, REQ_UP_ITEM);
+            if (select_menu == SELECT_FIRST_LEVEL_MENU) {
+                select_menu = SELECT_SECOND_LEVEL_MENU;
+            }
+            if (select_menu == SELECT_SECOND_LEVEL_MENU) {
+                menu_driver(my_menu_second_level, REQ_FIRST_ITEM);
+            }
             break;
         }
         wrefresh(center);
+
         *ch = getch();
         if (CHECK_F_KEYS(ch)) {
             break;
         }
+
         usleep(50);
+
     } while (1);
 
     /*
