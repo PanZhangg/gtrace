@@ -30,8 +30,11 @@
 
 #define MENU_SECOND_N_LINES 32
 #define MENU_SECOND_N_COLS TRACE_POINT_NAME_LEN
-#define MENU_Y_LOCATION 3
+#define MENU_Y_LOCATION 1
 #define MENU_FIRST_X_LOCATION 1
+
+#define MENU_WIDTH ( MENU_FIRST_X_LOCATION + MENU_FIRST_N_COLS + \
+                     MENU_SECOND_N_COLS )
 
 char retrieve_buffer[RETRIEVE_BUFFER_LENGTH][RETRIEVE_BUFFER_SIZE];
 
@@ -48,7 +51,7 @@ int selected_ret;
 
 int selected_line = 0;          /* select bar position */
 int selected_in_list = 0;       /* selection relative to the whole list */
-int list_offset = 0;            /* first index in the list to display (scroll) 
+int list_offset = 0;            /* first index in the list to display (scroll)
                                  */
 int nb_log_lines = 0;
 char log_lines[MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES];
@@ -596,16 +599,7 @@ static void
 create_first_level_menu_items(struct trace_manager *tm)
 {
     int i;
-    static uint32_t first_create = 1;
-    if(!first_create) {
-        unpost_menu(my_menu_first_level);
-        free_menu(my_menu_first_level);
-        for (i = 0; i < tracks_num; ++i) {
-            free_item(my_items_first_level[i]);
-        }
-    } else {
-        first_create = 0;
-    }
+
     find_all_tracks(tm, tracks_array, &tracks_num);
 
     convert_track_to_choices(tracks_array, tracks_num);
@@ -680,6 +674,24 @@ create_second_level_menu_items(uint32_t track)
     return;
 }
 
+static void
+display_trace_point_record(struct trace_point *tp)
+{
+    int i, j, lines = 0;
+    if (tp != NULL) {
+            for (i = 0; i < 10; i++) {
+                if (tp->cr_fn) {
+                    mvwprintw(center, 2 * lines + MENU_Y_LOCATION, MENU_WIDTH + 1, "timestamp: %ld",
+                              tp->view_buffer[i].event.timestamp);
+                    RETRIEVE_TP_CONTENT(tp, i, &j);
+                    mvwprintw(center, 2 * lines + MENU_Y_LOCATION + 1, MENU_WIDTH + 1, "j is %d", j);
+                    lines++;
+                }
+            }
+            wrefresh(center);
+        }
+}
+
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 static void
@@ -695,6 +707,7 @@ display_traces(int *ch)
      */
     create_first_level_menu_items(tm_view);
     create_second_level_menu_items(tracks_array[0]);
+    display_trace_point_record(tps[0]);
 
     wrefresh(center);
 
@@ -706,12 +719,18 @@ display_traces(int *ch)
         case KEY_DOWN:
             if (select_menu == SELECT_FIRST_LEVEL_MENU) {
                 menu_driver(my_menu_first_level, REQ_DOWN_ITEM);
-                first_menu_select_item++;
+                if (first_menu_select_item < tracks_num - 1) {
+                    first_menu_select_item++;
+                }
                 create_second_level_menu_items(tracks_array[first_menu_select_item]);
+                display_trace_point_record(tps[0]);
             }
             if (select_menu == SELECT_SECOND_LEVEL_MENU) {
                 menu_driver(my_menu_second_level, REQ_DOWN_ITEM);
-                second_menu_select_item++;
+                if (second_menu_select_item < trace_points_num - 1) {
+                    second_menu_select_item++;
+                }
+                display_trace_point_record(tps[second_menu_select_item]);
             }
             break;
         case KEY_UP:
@@ -720,12 +739,14 @@ display_traces(int *ch)
                 if (first_menu_select_item > 0) {
                     first_menu_select_item--;
                     create_second_level_menu_items(tracks_array[first_menu_select_item]);
+                    display_trace_point_record(tps[0]);
                 }
             }
             if (select_menu == SELECT_SECOND_LEVEL_MENU) {
                 menu_driver(my_menu_second_level, REQ_UP_ITEM);
                 if (second_menu_select_item > 0) {
                     second_menu_select_item--;
+                    display_trace_point_record(tps[second_menu_select_item]);
                 }
             }
             break;
@@ -737,15 +758,17 @@ display_traces(int *ch)
                 menu_driver(my_menu_first_level, REQ_FIRST_ITEM);
                 first_menu_select_item = 0;
                 create_second_level_menu_items(tracks_array[first_menu_select_item]);
+                display_trace_point_record(tps[0]);
             }
             break;
         case KEY_RIGHT:
             if (select_menu == SELECT_FIRST_LEVEL_MENU) {
                 select_menu = SELECT_SECOND_LEVEL_MENU;
-            }
-            if (select_menu == SELECT_SECOND_LEVEL_MENU) {
+                display_trace_point_record(tps[0]);
+            } else if (select_menu == SELECT_SECOND_LEVEL_MENU) {
                 menu_driver(my_menu_second_level, REQ_FIRST_ITEM);
                 second_menu_select_item = 0;
+                display_trace_point_record(tps[second_menu_select_item]);
             }
             break;
         }
@@ -766,12 +789,8 @@ display_traces(int *ch)
     unpost_menu(my_menu_first_level);
     unpost_menu(my_menu_second_level);
     free_menu(my_menu_first_level);
-    free_menu(my_menu_second_level);
     for (i = 0; i < tracks_num; ++i) {
         free_item(my_items_first_level[i]);
-    }
-    for (i = 0; i < trace_points_num; ++i) {
-        free_item(my_items_second_level[i]);
     }
 }
 

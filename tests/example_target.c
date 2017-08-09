@@ -31,6 +31,46 @@ int main() {
                         user_record_fn, i, j);
                         */
     }
+    for (i = 0, j = 0; i < 100000000; i++, j++) {
+        /*
+        SET_TRIGGER_TRACE_POINT(3, "user_defined_struct", example_tp2,
+                                struct user_defined_struct, user_trigger_fn,
+                                user_record_fn, i, j);
+        */
+        SET_TRACE_POINT(4, "user_defined_struct", example_tp3,
+                        struct user_defined_struct,
+                        user_record_fn, i, j);
+    }
+    for (i = 0, j = 0; i < 100000000; i++, j++) {
+        /*
+        SET_TRIGGER_TRACE_POINT(3, "user_defined_struct", example_tp2,
+                                struct user_defined_struct, user_trigger_fn,
+                                user_record_fn, i, j);
+        */
+        SET_TRACE_POINT(3, "user_defined_struct", example_tp4,
+                        struct user_defined_struct,
+                        user_record_fn, i, j);
+    }
+    for (i = 0, j = 0; i < 100000000; i++, j++) {
+        /*
+        SET_TRIGGER_TRACE_POINT(3, "user_defined_struct", example_tp2,
+                                struct user_defined_struct, user_trigger_fn,
+                                user_record_fn, i, j);
+        */
+        SET_TRACE_POINT(3, "user_defined_struct", example_tp5,
+                        struct user_defined_struct,
+                        user_record_fn, i, j);
+    }
+    for (i = 0, j = 0; i < 100000000; i++, j++) {
+        /*
+        SET_TRIGGER_TRACE_POINT(3, "user_defined_struct", example_tp2,
+                                struct user_defined_struct, user_trigger_fn,
+                                user_record_fn, i, j);
+        */
+        SET_TRACE_POINT(3, "user_defined_struct", example_tp6,
+                        struct user_defined_struct,
+                        user_record_fn, i, j);
+    }
     asm volatile ("" ::: "memory");
     uint64_t end = trace_cpu_time_now();
     printf("Time passed: %ld\n", end - start);
