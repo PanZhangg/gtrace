@@ -92,6 +92,9 @@ typedef int (*is_triggered_fn) (void *arg);
 
 #define TRACE_POINT_REGISTER_MAP_SIZE ( TRACE_POINT_LIST_SIZE >> 8 )
 
+#define MAX_TRACK_NUM 32
+#define MAX_TRACK_DIGITS 4
+
 /*
  * This num is selected for fitting each shared_mem_block into one cache line
  * When user wants more space to store the trace data, make sure the size
@@ -336,11 +339,19 @@ void register_content_retrieve_fn(struct trace_point *tp, content_retrieve fn);
 void register_trigger_fn(struct trace_point *tp, is_triggered_fn fn);
 
 /*
+ * Return all tracks contains in all trace points
+ *
+ * Result will be stored in the tracks array
+ * Number of tracks will be stored in num
+ */
+void find_all_tracks(struct trace_manager *tm,
+                     uint32_t * array, uint32_t * num);
+
+/*
  * Return all trace points which share the same type
  * to tps as well as its exact num
  * If none, return NULL
  */
-
 void find_tp_by_type(struct trace_manager *tm,
                      const char *type, struct trace_point **tps,
                      uint32_t * num);
@@ -350,7 +361,6 @@ void find_tp_by_type(struct trace_manager *tm,
  * to tps as well as its exact num
  * If none, return NULL
  */
-
 void find_tp_by_track(struct trace_manager *tm,
                       uint32_t track, struct trace_point **tps,
                       uint32_t * num);

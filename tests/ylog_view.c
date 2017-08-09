@@ -40,7 +40,8 @@ int selected_ret;
 
 int selected_line = 0;          /* select bar position */
 int selected_in_list = 0;       /* selection relative to the whole list */
-int list_offset = 0;            /* first index in the list to display (scroll) */
+int list_offset = 0;            /* first index in the list to display (scroll) 
+                                 */
 int nb_log_lines = 0;
 char log_lines[MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES];
 
@@ -63,6 +64,10 @@ WINDOW *footer;
 WINDOW *header;
 WINDOW *center;
 WINDOW *status;
+
+uint32_t tracks_array[MAX_TRACK_NUM];
+uint32_t tracks_num;
+char track_choices[MAX_TRACK_NUM + 1][MAX_TRACK_DIGITS];
 
 char *choices[] = {
     "1",
@@ -508,16 +513,35 @@ display_perf_points(struct trace_manager *tm, int *ch)
     } while (1);
 }
 
+static void
+convert_track_to_choices(uint32_t * array, uint32_t num)
+{
+    int i = 0;
+
+    for (; i < num; i++) {
+        snprintf(track_choices[i], MAX_TRACK_DIGITS, "%d", array[i]);
+    }
+    memset(track_choices[num], 0, 4);
+}
+
 /*
  * Find all tracks
  */
-static void create_first_level_menu_items(void) __attribute__ ((unused));
 static void
-create_first_level_menu_items(void)
+create_first_level_menu_items(struct trace_manager *tm)
 {
-    /*
-     * TODO
-     */
+    find_all_tracks(tm, tracks_array, &tracks_num);
+
+    convert_track_to_choices(tracks_array, tracks_num);
+
+    my_items_first_level = (ITEM **) calloc(tracks_num, sizeof(ITEM *));
+
+    int i;
+
+    for (i = 0; i < tracks_num; ++i) {
+        my_items_first_level[i] = new_item(choices[i], track_choices[i]);
+    }
+
     return;
 }
 
@@ -541,13 +565,11 @@ display_traces(int *ch)
 {
     int i = 0;
     int n_choices = ARRAY_SIZE(choices);
-    int select_item = 0;
+    int first_menu_select_item = 0;
+    int second_menu_select_item = 0;
     int select_menu = 0;
 
-    my_items_first_level = (ITEM **) calloc(n_choices, sizeof(ITEM *));
-    for (i = 0; i < n_choices; ++i) {
-        my_items_first_level[i] = new_item(choices[i], choice_names[i]);
-    }
+    create_first_level_menu_items(tm_view);
 
     my_items_second_level = (ITEM **) calloc(n_choices, sizeof(ITEM *));
     for (i = 0; i < n_choices; ++i) {
@@ -598,21 +620,25 @@ display_traces(int *ch)
         case KEY_DOWN:
             if (select_menu == SELECT_FIRST_LEVEL_MENU) {
                 menu_driver(my_menu_first_level, REQ_DOWN_ITEM);
+                first_menu_select_item++;
             }
             if (select_menu == SELECT_SECOND_LEVEL_MENU) {
                 menu_driver(my_menu_second_level, REQ_DOWN_ITEM);
+                second_menu_select_item++;
             }
-            select_item++;
             break;
         case KEY_UP:
             if (select_menu == SELECT_FIRST_LEVEL_MENU) {
                 menu_driver(my_menu_first_level, REQ_UP_ITEM);
+                if (first_menu_select_item > 0) {
+                    first_menu_select_item--;
+                }
             }
             if (select_menu == SELECT_SECOND_LEVEL_MENU) {
                 menu_driver(my_menu_second_level, REQ_UP_ITEM);
-            }
-            if (select_item > 0) {
-                select_item--;
+                if (second_menu_select_item > 0) {
+                    second_menu_select_item--;
+                }
             }
             break;
         case KEY_LEFT:
@@ -621,6 +647,7 @@ display_traces(int *ch)
             }
             if (select_menu == SELECT_FIRST_LEVEL_MENU) {
                 menu_driver(my_menu_first_level, REQ_FIRST_ITEM);
+                first_menu_select_item = 0;
             }
             break;
         case KEY_RIGHT:
@@ -629,6 +656,7 @@ display_traces(int *ch)
             }
             if (select_menu == SELECT_SECOND_LEVEL_MENU) {
                 menu_driver(my_menu_second_level, REQ_FIRST_ITEM);
+                second_menu_select_item = 0;
             }
             break;
         }

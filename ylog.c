@@ -189,6 +189,41 @@ register_trigger_fn(struct trace_point *tp, is_triggered_fn fn)
     tp->tr_fn = fn;
 }
 
+static int
+track_id_exists(uint32_t track_id, uint32_t * array, uint32_t num)
+{
+    int i = 0;
+
+    for (; i < num; i++) {
+        if (track_id == array[i]) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void
+find_all_tracks(struct trace_manager *tm, uint32_t * array, uint32_t * num)
+{
+    if (array == NULL || num == NULL) {
+        fprintf(stderr, "invalid parameter for return\n");
+        return;
+    }
+
+    int i = 0;
+    uint32_t track_num = 0;
+    uint32_t t_track_id;
+
+    for (; i < tm->trace_point_num; i++) {
+        t_track_id = tm->trace_point_list[i].track_id;
+        if (!track_id_exists(t_track_id, array, track_num)) {
+            array[track_num] = t_track_id;
+            track_num++;
+        }
+    }
+    *num = track_num;
+}
+
 void
 find_tp_by_type(struct trace_manager *tm,
                 const char *type, struct trace_point **tps, uint32_t * num)
@@ -336,6 +371,9 @@ get_prev_buffer_block(struct trace_point *tp)
 
     return (&tp->target_buffer[prev_index]);
 }
+
+static struct shared_mem_block *get_last_buffer_block(struct trace_point *tp)
+    __attribute__ ((unused));
 
 static struct shared_mem_block *
 get_last_buffer_block(struct trace_point *tp)
