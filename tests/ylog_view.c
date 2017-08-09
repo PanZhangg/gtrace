@@ -40,8 +40,7 @@ int selected_ret;
 
 int selected_line = 0;          /* select bar position */
 int selected_in_list = 0;       /* selection relative to the whole list */
-int list_offset = 0;            /* first index in the list to display (scroll) 
-                                 */
+int list_offset = 0;            /* first index in the list to display (scroll) */
 int nb_log_lines = 0;
 char log_lines[MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES];
 
@@ -81,8 +80,11 @@ char *choice_names[] = {
     (char *)NULL,
 };
 
-ITEM **my_items;
-MENU *my_menu;
+ITEM **my_items_first_level;
+MENU *my_menu_first_level;
+
+ITEM **my_items_second_level;
+MENU *my_menu_second_level;
 
 PANEL *main_panel;
 
@@ -515,40 +517,69 @@ display_traces(int *ch)
     int n_choices = ARRAY_SIZE(choices);
     int select_item = 0;
 
-    my_items = (ITEM **) calloc(n_choices, sizeof(ITEM *));
+    my_items_first_level = (ITEM **) calloc(n_choices, sizeof(ITEM *));
     for (i = 0; i < n_choices; ++i) {
-        my_items[i] = new_item(choices[i], choice_names[i]);
+        my_items_first_level[i] = new_item(choices[i], choice_names[i]);
+    }
+
+    my_items_second_level = (ITEM **) calloc(n_choices, sizeof(ITEM *));
+    for (i = 0; i < n_choices; ++i) {
+        my_items_second_level[i] = new_item(choices[i], choice_names[i]);
     }
 
     /*
      * Create menu
      */
-    my_menu = new_menu((ITEM **) my_items);
-    set_menu_win(my_menu, center);
-    set_menu_sub(my_menu, derwin(center, 6, 38, 3, 1));
+
+#define MENU_N_LINES 20
+#define MENU_N_COLS 10
+#define MENU_Y_LOCATION 3
+#define MENU_FIRST_X_LOCATION 1
+
+    my_menu_first_level = new_menu((ITEM **) my_items_first_level);
+    set_menu_win(my_menu_first_level, center);
+    set_menu_sub(my_menu_first_level, derwin(center, MENU_N_LINES, MENU_N_COLS,
+                                             MENU_Y_LOCATION,
+                                             MENU_FIRST_X_LOCATION));
+
+    my_menu_second_level = new_menu((ITEM **) my_items_second_level);
+    set_menu_win(my_menu_second_level, center);
+    set_menu_sub(my_menu_second_level,
+                 derwin(center, MENU_N_LINES, MENU_N_COLS, MENU_Y_LOCATION,
+                        MENU_FIRST_X_LOCATION + MENU_N_COLS));
 
     /*
      * Set menu mark to the string " > "
      */
-    set_menu_mark(my_menu, " > ");
+    set_menu_mark(my_menu_first_level, " > ");
+    set_menu_mark(my_menu_second_level, " > ");
     refresh();
 
     /*
      * Post the menu
      */
-    post_menu(my_menu);
+    post_menu(my_menu_first_level);
+    post_menu(my_menu_second_level);
+
     wrefresh(center);
+
     do {
         switch (*ch) {
         case KEY_DOWN:
-            menu_driver(my_menu, REQ_DOWN_ITEM);
+            menu_driver(my_menu_first_level, REQ_DOWN_ITEM);
             select_item++;
             break;
         case KEY_UP:
-            menu_driver(my_menu, REQ_UP_ITEM);
+            menu_driver(my_menu_first_level, REQ_UP_ITEM);
             if (select_item > 0) {
                 select_item--;
             }
+            break;
+        case KEY_LEFT:
+            menu_driver(my_menu_second_level, REQ_UP_ITEM);
+            break;
+        case KEY_RIGHT:
+            menu_driver(my_menu_first_level, REQ_UP_ITEM);
             break;
         }
         wrefresh(center);
@@ -562,10 +593,13 @@ display_traces(int *ch)
     /*
      * Unpost and free all the memory taken up
      */
-    unpost_menu(my_menu);
-    free_menu(my_menu);
+    unpost_menu(my_menu_first_level);
+    unpost_menu(my_menu_second_level);
+    free_menu(my_menu_first_level);
+    free_menu(my_menu_second_level);
     for (i = 0; i < n_choices; ++i) {
-        free_item(my_items[i]);
+        free_item(my_items_first_level[i]);
+        free_item(my_items_second_level[i]);
     }
 }
 
