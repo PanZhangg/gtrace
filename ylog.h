@@ -97,6 +97,7 @@ typedef int (*is_triggered_fn) (void *arg);
 
 #define MAX_TRACK_NUM 32
 #define MAX_TRACK_DIGITS 4
+#define TITLE_LINES 2
 
 /*
  * This num is selected for fitting each shared_mem_block into one cache line
@@ -367,6 +368,14 @@ void find_tp_by_type(struct trace_manager *tm,
 void find_tp_by_track(struct trace_manager *tm,
                       uint32_t track, struct trace_point **tps,
                       uint32_t * num);
+
+/*
+ * Return all trace points existing
+ * to tps as well as its exact num
+ * If none, return NULL
+ */
+void find_all_tps(struct trace_manager *tm,
+                  struct trace_point **tps, uint32_t * num);
 
 /*
  * List all trace points existing

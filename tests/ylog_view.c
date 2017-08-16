@@ -52,8 +52,7 @@ int selected_ret;
 
 int selected_line = 0;          /* select bar position */
 int selected_in_list = 0;       /* selection relative to the whole list */
-int list_offset = 0;            /* first index in the list to display (scroll) 
-                                 */
+int list_offset = 0;            /* first index in the list to display (scroll) */
 int nb_log_lines = 0;
 char log_lines[MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES];
 
@@ -808,17 +807,17 @@ display_traces(int *ch)
 static void
 display_trace_points(struct trace_manager *tm, char **output)
 {
-    struct trace_point *tps[5];
+    struct trace_point *tps[TRACE_POINT_LIST_SIZE];
     uint32_t num;
 
-    find_tp_by_track(tm, 4, tps, &num);
+    find_all_tps(tm, tps, &num);
     list_point(tps, num, output);
 
     set_window_title(center, "Trace Points");
 
     int i = 0;
 
-    for (; i < 5; i++) {
+    for (; i < num + TITLE_LINES; i++) {
         mvwprintw(center, 1 + i, 2, output[i]);
     }
     wrefresh(center);
@@ -832,6 +831,7 @@ main()
     cpu_mhz = get_cpu_mhz();
 
     tm_view = ylog_view_init();
+
     /*
      * TODO:register callback func automatically
      */
@@ -841,24 +841,10 @@ main()
 
     welcome();
 
-    int i, j, lines;
-
-    lines = 0;
-    struct trace_point *tp = get_first_tp_by_track(tm_view, 4);
-
-    if (tp != NULL) {
-        for (i = 0; i < 10; i++) {
-            if (tp->cr_fn) {
-                mvwprintw(center, 2 * lines + 1, 1, "timestamp: %ld",
-                          tp->view_buffer[i].event.timestamp);
-                RETRIEVE_TP_CONTENT(tp, i, &j);
-                mvwprintw(center, 2 * lines + 2, 1, "%s", g_output_buffer);
-                // wprintw(center, 2 * lines + 2, 1, "%s", g_output_buffer);
-                lines++;
-            }
-        }
-        wrefresh(center);
-    }
+    /*
+     * Display trace points info as default index screen
+     */
+    display_trace_points(tm_view, output_buffer);
 
     pthread_create(&keyboard_thread, NULL, handle_keyboard, NULL);
 

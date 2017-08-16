@@ -264,6 +264,23 @@ find_tp_by_track(struct trace_manager *tm,
     *num = tmp_num;
 }
 
+void
+find_all_tps(struct trace_manager *tm,
+             struct trace_point **tps, uint32_t * num)
+{
+    if (tps == NULL || num == NULL) {
+        fprintf(stderr, "invalid parameter for return\n");
+        return;
+    }
+
+    int i = 0;
+
+    for (; i < tm->trace_point_num; i++) {
+        tps[i] = &tm->trace_point_list[i];
+    }
+    *num = tm->trace_point_num;
+}
+
 static void
 print_trace_point(struct trace_point *tp, char *output)
 {
@@ -274,7 +291,6 @@ print_trace_point(struct trace_point *tp, char *output)
             tp->event_seq, tp->location);
 }
 
-#define TITLE_LINES 2
 #define PRINT_TRACE_POINT_TABLE_FIRST_LINE \
 sprintf(output[0], "Trace Point\tName\t\tStatus\tTrack\tEvent Records\tLocation"); \
 sprintf(output[1], "-------------------------------------\
