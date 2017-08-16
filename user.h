@@ -1,6 +1,8 @@
 #ifndef __USER__H__
 #define __USER__H__
 
+#include "ylog.h"
+
 /*===========================
  * User defined section
  * data structures and callback functions
@@ -29,6 +31,8 @@ user_view_fn(void *arg, void *value_j)
     struct user_defined_struct *u = (struct user_defined_struct *)arg;
 
     *(int *)value_j = u->j;
+
+    SET_USER_CONTENT_STRING("j is %d\n", u->j);
 }
 
 void
@@ -36,8 +40,8 @@ time_view_fn(void *arg, void *value_j)
 {
     struct time_trace *t = (struct time_trace *)arg;
 
-    fprintf(stdout, "start time stamp %ld\n\
-            \rend time stamp %ld\n", t->start, t->end);
+    SET_USER_CONTENT_STRING("start time stamp %ld\n\
+                            \rend time stamp %ld\n", t->start, t->end);
     value_j = NULL;
 }
 

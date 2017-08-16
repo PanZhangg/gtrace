@@ -25,10 +25,11 @@
         ( *ch == KEY_F(2) || *ch == KEY_F(3) || *ch == KEY_F(4) || \
           *ch == KEY_F(11)|| *ch == KEY_F(1) )
 
-#define MENU_FIRST_N_LINES MAX_TRACK_NUM
+// #define MENU_FIRST_N_LINES MAX_TRACK_NUM
+#define MENU_FIRST_N_LINES 4
 #define MENU_FIRST_N_COLS 10
 
-#define MENU_SECOND_N_LINES 32
+#define MENU_SECOND_N_LINES 16
 #define MENU_SECOND_N_COLS TRACE_POINT_NAME_LEN
 #define MENU_Y_LOCATION 1
 #define MENU_FIRST_X_LOCATION 1
@@ -51,7 +52,7 @@ int selected_ret;
 
 int selected_line = 0;          /* select bar position */
 int selected_in_list = 0;       /* selection relative to the whole list */
-int list_offset = 0;            /* first index in the list to display (scroll)
+int list_offset = 0;            /* first index in the list to display (scroll) 
                                  */
 int nb_log_lines = 0;
 char log_lines[MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES];
@@ -84,7 +85,9 @@ uint32_t trace_points_num;
 char tp_choices[TRACE_POINT_LIST_SIZE + 1][TRACE_POINT_NAME_LEN];
 struct trace_point *tps[TRACE_POINT_LIST_SIZE];
 
-/* MAX_TRACK_NUM */
+/*
+ * MAX_TRACK_NUM
+ */
 char *track_item_choices[] = {
     "Track",
     "Track",
@@ -606,16 +609,16 @@ create_first_level_menu_items(struct trace_manager *tm)
 
     my_items_first_level = (ITEM **) calloc(tracks_num, sizeof(ITEM *));
 
-
     for (i = 0; i < tracks_num; ++i) {
-        my_items_first_level[i] = new_item(track_item_choices[i], track_choices[i]);
+        my_items_first_level[i] =
+            new_item(track_item_choices[i], track_choices[i]);
     }
 
     my_menu_first_level = new_menu((ITEM **) my_items_first_level);
     set_menu_win(my_menu_first_level, center);
-    set_menu_sub(my_menu_first_level, derwin(center, MENU_FIRST_N_LINES, MENU_FIRST_N_COLS,
-                                             MENU_Y_LOCATION,
-                                             MENU_FIRST_X_LOCATION));
+    set_menu_sub(my_menu_first_level,
+                 derwin(center, MENU_FIRST_N_LINES, MENU_FIRST_N_COLS,
+                        MENU_Y_LOCATION, MENU_FIRST_X_LOCATION));
     set_menu_mark(my_menu_first_level, " > ");
     refresh();
     post_menu(my_menu_first_level);
@@ -626,13 +629,13 @@ static void
 convert_tp_to_choices(struct trace_point **tps, uint32_t num)
 {
     int i = 0;
+
     for (; i < num; i++) {
         memcpy(tp_choices[i], tps[i]->name, TRACE_POINT_NAME_LEN);
     }
 
     memset(tp_choices[num], 0, TRACE_POINT_NAME_LEN);
 }
-
 
 /*
  * Find all trace points of one track
@@ -642,6 +645,7 @@ create_second_level_menu_items(uint32_t track)
 {
     int i;
     static uint32_t first_create = 1;
+
     if (!first_create) {
         unpost_menu(my_menu_second_level);
         free_menu(my_menu_second_level);
@@ -663,7 +667,8 @@ create_second_level_menu_items(uint32_t track)
     my_menu_second_level = new_menu((ITEM **) my_items_second_level);
     set_menu_win(my_menu_second_level, center);
     set_menu_sub(my_menu_second_level,
-                 derwin(center, MENU_SECOND_N_LINES, MENU_SECOND_N_COLS, MENU_Y_LOCATION,
+                 derwin(center, MENU_SECOND_N_LINES, MENU_SECOND_N_COLS,
+                        MENU_Y_LOCATION,
                         MENU_FIRST_X_LOCATION + MENU_FIRST_N_COLS));
 
     set_menu_mark(my_menu_second_level, " * ");
@@ -678,18 +683,21 @@ static void
 display_trace_point_record(struct trace_point *tp)
 {
     int i, j, lines = 0;
+
     if (tp != NULL) {
-            for (i = 0; i < 10; i++) {
-                if (tp->cr_fn) {
-                    mvwprintw(center, 2 * lines + MENU_Y_LOCATION, MENU_WIDTH + 1, "timestamp: %ld",
-                              tp->view_buffer[i].event.timestamp);
-                    RETRIEVE_TP_CONTENT(tp, i, &j);
-                    mvwprintw(center, 2 * lines + MENU_Y_LOCATION + 1, MENU_WIDTH + 1, "j is %d", j);
-                    lines++;
-                }
+        for (i = 0; i < 10; i++) {
+            if (tp->cr_fn) {
+                mvwprintw(center, 2 * lines + MENU_Y_LOCATION, MENU_WIDTH + 1,
+                          "timestamp: %ld",
+                          tp->view_buffer[i].event.timestamp);
+                RETRIEVE_TP_CONTENT(tp, i, &j);
+                mvwprintw(center, 2 * lines + MENU_Y_LOCATION + 1,
+                          MENU_WIDTH + 1, "j is %d", j);
+                lines++;
             }
-            wrefresh(center);
         }
+        wrefresh(center);
+    }
 }
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
@@ -722,7 +730,8 @@ display_traces(int *ch)
                 if (first_menu_select_item < tracks_num - 1) {
                     first_menu_select_item++;
                 }
-                create_second_level_menu_items(tracks_array[first_menu_select_item]);
+                create_second_level_menu_items(tracks_array
+                                               [first_menu_select_item]);
                 display_trace_point_record(tps[0]);
             }
             if (select_menu == SELECT_SECOND_LEVEL_MENU) {
@@ -738,7 +747,8 @@ display_traces(int *ch)
                 menu_driver(my_menu_first_level, REQ_UP_ITEM);
                 if (first_menu_select_item > 0) {
                     first_menu_select_item--;
-                    create_second_level_menu_items(tracks_array[first_menu_select_item]);
+                    create_second_level_menu_items(tracks_array
+                                                   [first_menu_select_item]);
                     display_trace_point_record(tps[0]);
                 }
             }
@@ -757,7 +767,8 @@ display_traces(int *ch)
             if (select_menu == SELECT_FIRST_LEVEL_MENU) {
                 menu_driver(my_menu_first_level, REQ_FIRST_ITEM);
                 first_menu_select_item = 0;
-                create_second_level_menu_items(tracks_array[first_menu_select_item]);
+                create_second_level_menu_items(tracks_array
+                                               [first_menu_select_item]);
                 display_trace_point_record(tps[0]);
             }
             break;
@@ -841,7 +852,8 @@ main()
                 mvwprintw(center, 2 * lines + 1, 1, "timestamp: %ld",
                           tp->view_buffer[i].event.timestamp);
                 RETRIEVE_TP_CONTENT(tp, i, &j);
-                mvwprintw(center, 2 * lines + 2, 1, "j is %d", j);
+                mvwprintw(center, 2 * lines + 2, 1, "%s", g_output_buffer);
+                // wprintw(center, 2 * lines + 2, 1, "%s", g_output_buffer);
                 lines++;
             }
         }

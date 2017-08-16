@@ -38,6 +38,9 @@ double get_cpu_mhz(void);
  * @arg content
  *  Any specific content one would like to pass
  *  out of the function, used for trigger normally
+ * @arg string_output
+ *  User customlized string to generate human
+ *  readable content by ylog_view
  */
 typedef void (*content_retrieve) (void *addr, void *content);
 
@@ -628,3 +631,6 @@ stop_record_##name: ;
         stop_record_##name:
 
 #endif
+
+#define SET_USER_CONTENT_STRING(...) \
+        sprintf(g_output_buffer, ##__VA_ARGS__);
