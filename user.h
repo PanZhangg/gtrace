@@ -32,7 +32,7 @@ user_view_fn(void *arg, void *value_j)
 
     *(int *)value_j = u->j;
 
-    SET_USER_CONTENT_STRING("j is %d\n", u->j);
+    SET_USER_CONTENT_STRING("j is %d\nj is again %d\n", u->j, u->j);
 }
 
 void

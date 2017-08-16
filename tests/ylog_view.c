@@ -37,6 +37,8 @@
 #define MENU_WIDTH ( MENU_FIRST_X_LOCATION + MENU_FIRST_N_COLS + \
                      MENU_SECOND_N_COLS )
 
+#define TRACE_WIN_WIDTH ( COLS- MENU_WIDTH - 1)
+
 char retrieve_buffer[RETRIEVE_BUFFER_LENGTH][RETRIEVE_BUFFER_SIZE];
 
 char *output_buffer[RETRIEVE_BUFFER_LENGTH];
@@ -52,7 +54,8 @@ int selected_ret;
 
 int selected_line = 0;          /* select bar position */
 int selected_in_list = 0;       /* selection relative to the whole list */
-int list_offset = 0;            /* first index in the list to display (scroll) */
+int list_offset = 0;            /* first index in the list to display (scroll) 
+                                 */
 int nb_log_lines = 0;
 char log_lines[MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES];
 
@@ -74,6 +77,7 @@ int max_center_lines;
 WINDOW *footer;
 WINDOW *header;
 WINDOW *center;
+WINDOW *tracewin;
 WINDOW *status;
 
 uint32_t tracks_array[MAX_TRACK_NUM];
@@ -200,6 +204,18 @@ create_newwin(int height, int width, int starty, int startx)
     return local_win;
 }
 
+static WINDOW *
+create_newwin_noborder(int height, int width, int starty, int startx)
+{
+    WINDOW *local_win;
+
+    local_win = newwin(height, width, starty, startx);
+
+    wrefresh(local_win);
+
+    return local_win;
+}
+
 void
 set_window_title(WINDOW * win, char *title)
 {
@@ -213,6 +229,7 @@ shutdown(int sig)
 {
     delwin(footer);
     delwin(center);
+    delwin(tracewin);
     delwin(header);
     delwin(status);
     endwin();
@@ -281,6 +298,12 @@ welcome()
     header = create_newwin(HEADER_HEIGHT, COLS - 1, 0, 0);
     center = create_newwin(LINES - WIN_HEIGHT_SUM_EXPECT_CENTER, COLS - 1,
                            HEADER_HEIGHT, 0);
+    tracewin =
+        create_newwin_noborder(LINES - WIN_HEIGHT_SUM_EXPECT_CENTER - 3,
+                               TRACE_WIN_WIDTH - 3, HEADER_HEIGHT + 1,
+                               MENU_WIDTH + 1);
+
+    scrollok(tracewin, TRUE);
     status =
         create_newwin(STATUS_HEIGHT, COLS - 1,
                       LINES - STATUS_HEIGHT - FOOTER_HEIGHT, 0);
@@ -418,7 +441,7 @@ update_header(void)
     wattroff(header, COLOR_PAIR(4));
 
     wattron(header, COLOR_PAIR(2));
-    wprintw(header, "       %s", "Version:17.20");
+    wprintw(header, "       %s", "Version:17.80");
     wattroff(header, COLOR_PAIR(2));
 
     wattron(header, COLOR_PAIR(1));
@@ -681,21 +704,18 @@ create_second_level_menu_items(uint32_t track)
 static void
 display_trace_point_record(struct trace_point *tp)
 {
+    werase(tracewin);
     int i, j, lines = 0;
 
     if (tp != NULL) {
-        for (i = 0; i < 10; i++) {
+        for (i = 0; i < tp->event_seq % (TRACE_POINT_LIST_SIZE - 1); i++) {
             if (tp->cr_fn) {
-                mvwprintw(center, 2 * lines + MENU_Y_LOCATION, MENU_WIDTH + 1,
-                          "timestamp: %ld",
-                          tp->view_buffer[i].event.timestamp);
                 RETRIEVE_TP_CONTENT(tp, i, &j);
-                mvwprintw(center, 2 * lines + MENU_Y_LOCATION + 1,
-                          MENU_WIDTH + 1, "j is %d", j);
+                wprintw(tracewin, "%s", g_output_buffer, lines);
                 lines++;
             }
         }
-        wrefresh(center);
+        wrefresh(tracewin);
     }
 }
 
@@ -779,6 +799,18 @@ display_traces(int *ch)
                 menu_driver(my_menu_second_level, REQ_FIRST_ITEM);
                 second_menu_select_item = 0;
                 display_trace_point_record(tps[second_menu_select_item]);
+            }
+            break;
+        case KEY_PPAGE:
+            if (select_menu == SELECT_SECOND_LEVEL_MENU) {
+                wscrl(tracewin, -1);
+                wrefresh(tracewin);
+            }
+            break;
+        case KEY_NPAGE:
+            if (select_menu == SELECT_SECOND_LEVEL_MENU) {
+                wscrl(tracewin, 1);
+                wrefresh(tracewin);
             }
             break;
         }

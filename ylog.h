@@ -639,7 +639,11 @@ stop_record_##name: ;
         } \
         stop_record_##name:
 
-#endif
-
+/*
+ * For users to set their own customized trace display
+ * string, used in user.h
+ */
 #define SET_USER_CONTENT_STRING(...) \
         sprintf(g_output_buffer, ##__VA_ARGS__);
+
+#endif
