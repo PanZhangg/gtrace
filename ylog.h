@@ -451,6 +451,21 @@ uint32_t *get_perf_point_data_block(struct perf_point *pp);
             ~(1 << tp->trace_point_id % 8); \
         } while(0)
 
+#define ENABLE_TP_VIEW(tm, tp) \
+        do { \
+            tp->is_enabled = 1; \
+            tm->enabled_trace_point_mask[tp->trace_point_id / 8] |= \
+            (1 << tp->trace_point_id % 8); \
+        } while(0)
+
+#define DISABLE_TP_VIEW(tm, tp) \
+        do { \
+            tp->is_enabled = 0; \
+            tm->enabled_trace_point_mask[tp->trace_point_id / 8] &= \
+            ~(1 << tp->trace_point_id % 8); \
+        } while(0)
+
+
 /*
  * Set one trace point with a unique name in one unique scope of
  * the source code in the target system

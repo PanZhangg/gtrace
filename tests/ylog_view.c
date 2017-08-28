@@ -53,7 +53,7 @@ struct global_args {
     int is_list_mp_command;
 } global_args;
 
-static const char *optString = "hgmplt:";
+static const char *optString = "hgmplt:s:P:";
 
 char retrieve_buffer[RETRIEVE_BUFFER_LENGTH][RETRIEVE_BUFFER_SIZE];
 
@@ -70,8 +70,10 @@ int selected_ret;
 
 int selected_line = 0;          /* select bar position */
 int selected_in_list = 0;       /* selection relative to the whole list */
-int list_offset = 0;            /* first index in the list to display (scroll) 
-                                 */
+/*
+ * first index in the list to display (scroll)
+ */
+int list_offset = 0;
 int nb_log_lines = 0;
 char log_lines[MAX_LINE_LENGTH * MAX_LOG_LINES + MAX_LOG_LINES];
 
@@ -745,6 +747,16 @@ create_second_level_menu_items(uint32_t track)
 }
 
 static void
+_display_trace_points_cli(struct trace_point *tp)
+{
+    printf("======================================================================\n\n");
+    printf("Timestamp:%4ld\t%4d\t%8s\t%ld\t%s\n",
+           tp->view_buffer->event.timestamp,
+           tp->trace_point_id, tp->name,
+           tp->event_seq, tp->location);
+}
+
+static void
 display_last_trace_record_by_track_cli(uint32_t track)
 {
     int i = 0;
@@ -756,7 +768,33 @@ display_last_trace_record_by_track_cli(uint32_t track)
             RETRIEVE_TP_CONTENT(tps[i],
                                 tps[i]->event_seq % (TRACE_POINT_LIST_SIZE -
                                                      1), &j);
+            _display_trace_points_cli(tps[i]);
             printf("%s\n", g_output_buffer);
+            printf("======================================================================\n");
+        }
+    }
+}
+
+
+static void
+display_trace_point_record_cli(struct trace_point *tp)
+{
+    int i, j;
+
+    int start;
+
+    if (tp->event_seq <= TRACE_POINT_LIST_SIZE) {
+        start = 0;
+    } else {
+        start = (tp->event_seq + 1) % (TRACE_POINT_LIST_SIZE - 1);
+    }
+    if (tp != NULL) {
+        for (i = start; (i % (TRACE_POINT_LIST_SIZE - 1)) != (tp->event_seq % (TRACE_POINT_LIST_SIZE - 1)); i++) {
+            if (tp->cr_fn) {
+                RETRIEVE_TP_CONTENT(tp, i, &j);
+                printf("%s", g_output_buffer);
+                printf("======================================================================\n");
+            }
         }
     }
 }
@@ -932,19 +970,35 @@ display_trace_points(struct trace_manager *tm, char **output)
 }
 
 static void
+switch_tp_status(struct trace_manager *tm, int id)
+{
+    struct trace_point *tp = &tm->trace_point_list[id];
+    if (TP_IS_ENABLED(tp)) {
+        DISABLE_TP_VIEW(tm, tp);
+    } else {
+        ENABLE_TP_VIEW(tm, tp);
+    }
+}
+
+static void
 display_usage(void)
 {
-    printf("help info\n");
-}
-
-static void
-parse_command(void)
-{
-}
-
-static void
-command_process(void)
-{
+    printf("===============================\n");
+    printf("Gtrace man\n\n");
+    printf("\tt[arg]:\n");
+    printf("\t\tprint the very last record of each trace point(s) belong to track [arg]\n");
+    printf("\tl:\n");
+    printf("\t\tlist all trace points\n");
+    printf("\tm:\n");
+    printf("\t\tlist all monitor points\n");
+    printf("\tp:\n");
+    printf("\t\tlist all perf points\n");
+    printf("\ts[arg]:\n");
+    printf("\t\tswitch status of trace point[arg]\n");
+    printf("\tg:\n");
+    printf("\t\tuse GUI\n");
+    printf("\tP[arg]:\n");
+    printf("\t\tprint all trace records of trace point[arg]\n");
 }
 
 static void
@@ -993,6 +1047,12 @@ main(int argc, char **argv)
         case 'p':
             display_perf_points_cli(tm_view);
             break;
+        case 's':
+            switch_tp_status(tm_view, atoi(optarg));
+            break;
+        case 'P':
+            display_trace_point_record_cli(&tm_view->trace_point_list[atoi(optarg)]);
+            break;
         case 'g':
             welcome();
             /*
@@ -1011,7 +1071,7 @@ main(int argc, char **argv)
             break;
         default:
             /*
-             * You won't actually get here. 
+             * You won't actually get here.
              */
             break;
         }

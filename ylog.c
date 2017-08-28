@@ -285,14 +285,14 @@ static void
 print_trace_point(struct trace_point *tp, char *output)
 {
     static char *status_string[2] = { "Disabled", "Enabled" };
-    sprintf(output, "TP_ID: %4d\t%8s\t%6s\t%5d\t%13ld\t%s",
+    sprintf(output, "TP_ID: %4d\t%8s\t%8s\t%d\t%8ld\t%s",
             tp->trace_point_id, tp->name,
             status_string[tp->is_enabled], tp->track_id,
             tp->event_seq, tp->location);
 }
 
 #define PRINT_TRACE_POINT_TABLE_FIRST_LINE \
-sprintf(output[0], "Trace Point\tName\t\tStatus\tTrack\tEvent Records\tLocation"); \
+sprintf(output[0], "Trace Point\tName\t\tStatus\t\tTrack\tEvent Records\tLocation"); \
 sprintf(output[1], "-------------------------------------\
 -----------------------------------------"); \
 
