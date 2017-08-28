@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <panel.h>
 #include <fcntl.h>
@@ -38,6 +39,21 @@
                      MENU_SECOND_N_COLS )
 
 #define TRACE_WIN_WIDTH ( COLS- MENU_WIDTH - 1)
+
+/*
+ * =======================================
+ * =    Command variables                =
+ * =======================================
+ */
+
+struct global_args {
+    int is_cli_command;
+    int is_list_tp_command;
+    int is_list_pp_command;
+    int is_list_mp_command;
+} global_args;
+
+static const char *optString = "hgmpl";
 
 char retrieve_buffer[RETRIEVE_BUFFER_LENGTH][RETRIEVE_BUFFER_SIZE];
 
@@ -314,7 +330,6 @@ welcome()
 
     update_footer();
     update_header();
-    init_buffer_pointer();
 }
 
 static void
@@ -515,6 +530,18 @@ begin:
 }
 
 static void
+display_monitor_points_cli(struct trace_manager *tm)
+{
+    int i = 0;
+
+    printf("Monitor Points\n");
+    printf("=============================\n");
+    for (; i < tm->monitor_point_num; i++) {
+        printf("%s:%lld\n", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
+    }
+}
+
+static void
 display_monitor_points(struct trace_manager *tm, int *ch)
 {
     do {
@@ -576,6 +603,22 @@ perf_point_avg_value(struct perf_point *pp)
     float time = (float)cycles / (cpu_mhz * 1000000);
 
     return ((double)sum / time);
+}
+
+static void
+display_perf_points_cli(struct trace_manager *tm)
+{
+    int i = 0;
+
+    printf("Perf Points\n");
+    printf("=============================\n");
+
+    for (; i < tm->perf_point_num; i++) {
+        float avg = perf_point_avg_value(&tm->perf_list[i]);
+
+        printf("%s:%f %s\n",
+               tm->perf_list[i].string_buffer, avg, tm->perf_list[i].unit);
+    }
 }
 
 static void
@@ -837,6 +880,22 @@ display_traces(int *ch)
 }
 
 static void
+display_trace_points_cli(struct trace_manager *tm, char **output)
+{
+    struct trace_point *tps[TRACE_POINT_LIST_SIZE];
+    uint32_t num;
+
+    find_all_tps(tm, tps, &num);
+    list_point(tps, num, output);
+
+    int i = 0;
+
+    for (; i < num + TITLE_LINES; i++) {
+        printf("%s\n", output[i]);
+    }
+}
+
+static void
 display_trace_points(struct trace_manager *tm, char **output)
 {
     struct trace_point *tps[TRACE_POINT_LIST_SIZE];
@@ -855,14 +914,40 @@ display_trace_points(struct trace_manager *tm, char **output)
     wrefresh(center);
 }
 
-int
-main()
+static void
+display_usage(void)
 {
+    printf("help info\n");
+}
+
+static void
+parse_command(void)
+{
+}
+
+static void
+command_process(void)
+{
+}
+
+static void
+global_args_init(void)
+{
+    memset(&global_args, 0, sizeof(global_args));
+}
+
+int
+main(int argc, char **argv)
+{
+    global_args_init();
+
     fcntl(0, F_SETFL, O_NONBLOCK);
 
     cpu_mhz = get_cpu_mhz();
 
     tm_view = ylog_view_init();
+
+    init_buffer_pointer();
 
     /*
      * TODO:register callback func automatically
@@ -871,17 +956,47 @@ main()
                                           user_view_fn);
     REGISTER_CONTENT_RETRIEVE_FN_FOR_TYPE(tm_view, "time_trace", time_view_fn);
 
-    welcome();
+    int opt = 0;
 
-    /*
-     * Display trace points info as default index screen
-     */
-    display_trace_points(tm_view, output_buffer);
+    opt = getopt(argc, argv, optString);
+    while (opt != -1) {
+        switch (opt) {
+        case 'I':
+            break;
 
-    pthread_create(&keyboard_thread, NULL, handle_keyboard, NULL);
+        case 'l':
+            display_trace_points_cli(tm_view, output_buffer);
+            break;
+        case 'm':
+            display_monitor_points_cli(tm_view);
+            break;
+        case 'p':
+            display_perf_points_cli(tm_view);
+            break;
+        case 'g':
+            welcome();
+            /*
+             * Display trace points info as default index screen
+             */
+            display_trace_points(tm_view, output_buffer);
+            pthread_create(&keyboard_thread, NULL, handle_keyboard, NULL);
+            pthread_join(keyboard_thread, NULL);
+            shutdown(0);
+            break;
+        case 'v':
+            break;
+        case 'h':              /* fall-through is intentional */
+        case '?':
+            display_usage();
+            break;
+        default:
+            /*
+             * You won't actually get here. 
+             */
+            break;
+        }
+        opt = getopt(argc, argv, optString);
+    }
 
-    pthread_join(keyboard_thread, NULL);
-
-    shutdown(0);
     return 0;
 }
