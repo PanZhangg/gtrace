@@ -53,7 +53,7 @@ struct global_args {
     int is_list_mp_command;
 } global_args;
 
-static const char *optString = "hgmpl";
+static const char *optString = "hgmplt:";
 
 char retrieve_buffer[RETRIEVE_BUFFER_LENGTH][RETRIEVE_BUFFER_SIZE];
 
@@ -537,7 +537,7 @@ display_monitor_points_cli(struct trace_manager *tm)
     printf("Monitor Points\n");
     printf("=============================\n");
     for (; i < tm->monitor_point_num; i++) {
-        printf("%s:%lld\n", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
+        printf("%s:%ld\n", tm->mp_list[i].string_buffer, tm->mp_list[i].data);
     }
 }
 
@@ -742,6 +742,23 @@ create_second_level_menu_items(uint32_t track)
     post_menu(my_menu_second_level);
 
     return;
+}
+
+static void
+display_last_trace_record_by_track_cli(uint32_t track)
+{
+    int i = 0;
+    int j;
+
+    find_tp_by_track(tm_view, track, tps, &trace_points_num);
+    for (; i < trace_points_num; i++) {
+        if (tps[i]->cr_fn) {
+            RETRIEVE_TP_CONTENT(tps[i],
+                                tps[i]->event_seq % (TRACE_POINT_LIST_SIZE -
+                                                     1), &j);
+            printf("%s\n", g_output_buffer);
+        }
+    }
 }
 
 static void
@@ -964,6 +981,9 @@ main(int argc, char **argv)
         case 'I':
             break;
 
+        case 't':
+            display_last_trace_record_by_track_cli(atoi(optarg));
+            break;
         case 'l':
             display_trace_points_cli(tm_view, output_buffer);
             break;
