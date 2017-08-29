@@ -24,7 +24,7 @@ void
 user_record_fn(struct user_defined_struct *uds, int i, int j)
 {
     uds->i = i;
-    uds->j = j * j;
+    uds->j = j;
 }
 
 void
@@ -32,7 +32,7 @@ user_view_fn(void *arg)
 {
     struct user_defined_struct *u = (struct user_defined_struct *)arg;
 
-    SET_USER_CONTENT_STRING("j is %d\nj is again %d\n", u->j, u->j);
+    SET_USER_CONTENT_STRING("i is %d\nj is %d\n", u->i, u->j);
 }
 
 void

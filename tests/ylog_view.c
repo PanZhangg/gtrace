@@ -770,8 +770,7 @@ display_last_trace_record_by_track_cli(uint32_t track)
     for (; i < trace_points_num; i++) {
         if (tps[i]->cr_fn) {
             RETRIEVE_TP_CONTENT(tps[i],
-                                tps[i]->event_seq % (TRACE_POINT_LIST_SIZE -
-                                                     1));
+                                (tps[i]->event_seq) % (CIRCULAR_BUFFER_SIZE));
             _display_trace_points_cli(tps[i]);
             printf("%s", g_output_buffer);
             printf
@@ -781,21 +780,27 @@ display_last_trace_record_by_track_cli(uint32_t track)
 }
 
 static void
-display_trace_point_record_cli(struct trace_point *tp)
+display_trace_point_record_cli(struct trace_manager *tm, int id)
 {
     int i;
 
     int start;
 
-    if (tp->event_seq <= TRACE_POINT_LIST_SIZE) {
+    if (id > tm->trace_point_num) {
+        printf("Invalid trace point ID\n");
+        return;
+    }
+    struct trace_point *tp = &tm->trace_point_list[id];
+
+    if (tp->event_seq <= CIRCULAR_BUFFER_SIZE) {
         start = 0;
     } else {
-        start = (tp->event_seq + 1) % (TRACE_POINT_LIST_SIZE - 1);
+        start = (tp->event_seq + 1) % (CIRCULAR_BUFFER_SIZE);
     }
     if (tp != NULL) {
         for (i = start;
-             (i % (TRACE_POINT_LIST_SIZE - 1)) !=
-             (tp->event_seq % (TRACE_POINT_LIST_SIZE - 1)); i++) {
+             (i % (CIRCULAR_BUFFER_SIZE)) !=
+             ((tp->event_seq) % (CIRCULAR_BUFFER_SIZE)); i++) {
             if (tp->cr_fn) {
                 RETRIEVE_TP_CONTENT(tp, i);
                 printf("%s", g_output_buffer);
@@ -803,6 +808,10 @@ display_trace_point_record_cli(struct trace_point *tp)
                     ("======================================================================\n");
             }
         }
+        RETRIEVE_TP_CONTENT(tp, (tp->event_seq % (CIRCULAR_BUFFER_SIZE)));
+        printf("%s", g_output_buffer);
+        printf
+            ("======================================================================\n");
     }
 }
 
@@ -813,7 +822,7 @@ display_trace_point_record(struct trace_point *tp)
     int i, lines = 0;
 
     if (tp != NULL) {
-        for (i = 0; i < tp->event_seq % (TRACE_POINT_LIST_SIZE - 1); i++) {
+        for (i = 0; i < (tp->event_seq) % (CIRCULAR_BUFFER_SIZE); i++) {
             if (tp->cr_fn) {
                 RETRIEVE_TP_CONTENT(tp, i);
                 wprintw(tracewin, "%s", g_output_buffer, lines);
@@ -979,6 +988,10 @@ display_trace_points(struct trace_manager *tm, char **output)
 static void
 switch_tp_status(struct trace_manager *tm, int id)
 {
+    if (id > tm->trace_point_num) {
+        printf("Invalid trace point ID\n");
+        return;
+    }
     struct trace_point *tp = &tm->trace_point_list[id];
 
     if (TP_IS_ENABLED(tp)) {
@@ -1057,8 +1070,7 @@ main(int argc, char **argv)
             switch_tp_status(tm_view, atoi(optarg));
             break;
         case 'P':
-            display_trace_point_record_cli(&tm_view->
-                                           trace_point_list[atoi(optarg)]);
+            display_trace_point_record_cli(tm_view, atoi(optarg));
             break;
         case 'g':
             welcome();
