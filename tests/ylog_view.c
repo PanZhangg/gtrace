@@ -70,6 +70,7 @@ int selected_ret;
 
 int selected_line = 0;          /* select bar position */
 int selected_in_list = 0;       /* selection relative to the whole list */
+
 /*
  * first index in the list to display (scroll)
  */
@@ -749,37 +750,40 @@ create_second_level_menu_items(uint32_t track)
 static void
 _display_trace_points_cli(struct trace_point *tp)
 {
-    printf("======================================================================\n\n");
     printf("Timestamp:%4ld\t%4d\t%8s\t%ld\t%s\n",
            tp->view_buffer->event.timestamp,
-           tp->trace_point_id, tp->name,
-           tp->event_seq, tp->location);
+           tp->trace_point_id, tp->name, tp->event_seq, tp->location);
 }
 
 static void
 display_last_trace_record_by_track_cli(uint32_t track)
 {
     int i = 0;
-    int j;
 
     find_tp_by_track(tm_view, track, tps, &trace_points_num);
+    if (trace_points_num == 0) {
+        printf("Invalid track num\n");
+        return;
+    }
+    printf
+        ("======================================================================\n");
     for (; i < trace_points_num; i++) {
         if (tps[i]->cr_fn) {
             RETRIEVE_TP_CONTENT(tps[i],
                                 tps[i]->event_seq % (TRACE_POINT_LIST_SIZE -
-                                                     1), &j);
+                                                     1));
             _display_trace_points_cli(tps[i]);
-            printf("%s\n", g_output_buffer);
-            printf("======================================================================\n");
+            printf("%s", g_output_buffer);
+            printf
+                ("======================================================================\n");
         }
     }
 }
 
-
 static void
 display_trace_point_record_cli(struct trace_point *tp)
 {
-    int i, j;
+    int i;
 
     int start;
 
@@ -789,11 +793,14 @@ display_trace_point_record_cli(struct trace_point *tp)
         start = (tp->event_seq + 1) % (TRACE_POINT_LIST_SIZE - 1);
     }
     if (tp != NULL) {
-        for (i = start; (i % (TRACE_POINT_LIST_SIZE - 1)) != (tp->event_seq % (TRACE_POINT_LIST_SIZE - 1)); i++) {
+        for (i = start;
+             (i % (TRACE_POINT_LIST_SIZE - 1)) !=
+             (tp->event_seq % (TRACE_POINT_LIST_SIZE - 1)); i++) {
             if (tp->cr_fn) {
-                RETRIEVE_TP_CONTENT(tp, i, &j);
+                RETRIEVE_TP_CONTENT(tp, i);
                 printf("%s", g_output_buffer);
-                printf("======================================================================\n");
+                printf
+                    ("======================================================================\n");
             }
         }
     }
@@ -803,12 +810,12 @@ static void
 display_trace_point_record(struct trace_point *tp)
 {
     werase(tracewin);
-    int i, j, lines = 0;
+    int i, lines = 0;
 
     if (tp != NULL) {
         for (i = 0; i < tp->event_seq % (TRACE_POINT_LIST_SIZE - 1); i++) {
             if (tp->cr_fn) {
-                RETRIEVE_TP_CONTENT(tp, i, &j);
+                RETRIEVE_TP_CONTENT(tp, i);
                 wprintw(tracewin, "%s", g_output_buffer, lines);
                 lines++;
             }
@@ -973,6 +980,7 @@ static void
 switch_tp_status(struct trace_manager *tm, int id)
 {
     struct trace_point *tp = &tm->trace_point_list[id];
+
     if (TP_IS_ENABLED(tp)) {
         DISABLE_TP_VIEW(tm, tp);
     } else {
@@ -986,7 +994,8 @@ display_usage(void)
     printf("===============================\n");
     printf("Gtrace man\n\n");
     printf("\tt[arg]:\n");
-    printf("\t\tprint the very last record of each trace point(s) belong to track [arg]\n");
+    printf
+        ("\t\tprint the very last record of each trace point(s) belong to track [arg]\n");
     printf("\tl:\n");
     printf("\t\tlist all trace points\n");
     printf("\tm:\n");
@@ -1032,9 +1041,6 @@ main(int argc, char **argv)
     opt = getopt(argc, argv, optString);
     while (opt != -1) {
         switch (opt) {
-        case 'I':
-            break;
-
         case 't':
             display_last_trace_record_by_track_cli(atoi(optarg));
             break;
@@ -1051,7 +1057,8 @@ main(int argc, char **argv)
             switch_tp_status(tm_view, atoi(optarg));
             break;
         case 'P':
-            display_trace_point_record_cli(&tm_view->trace_point_list[atoi(optarg)]);
+            display_trace_point_record_cli(&tm_view->
+                                           trace_point_list[atoi(optarg)]);
             break;
         case 'g':
             welcome();

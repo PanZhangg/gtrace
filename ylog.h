@@ -35,14 +35,8 @@ double get_cpu_mhz(void);
  * content stored in the event data space
  * @arg addr
  *  addr to the data space
- * @arg content
- *  Any specific content one would like to pass
- *  out of the function, used for trigger normally
- * @arg string_output
- *  User customlized string to generate human
- *  readable content by ylog_view
  */
-typedef void (*content_retrieve) (void *addr, void *content);
+typedef void (*content_retrieve) (void *addr);
 
 /*
  * function pointer for target process to decide
@@ -465,7 +459,6 @@ uint32_t *get_perf_point_data_block(struct perf_point *pp);
             ~(1 << tp->trace_point_id % 8); \
         } while(0)
 
-
 /*
  * Set one trace point with a unique name in one unique scope of
  * the source code in the target system
@@ -576,11 +569,11 @@ stop_record_##name: ;
  * @arg content is an output argument
  * space must be pre-alloc
  */
-#define RETRIEVE_TP_CONTENT(TP, buf_index, content) \
+#define RETRIEVE_TP_CONTENT(TP, buf_index) \
     do { \
         if (TP->cr_fn) { \
             TP->read_seq++; \
-            TP->cr_fn((void *)&TP->view_buffer[buf_index].data, content); \
+            TP->cr_fn((void *)&TP->view_buffer[buf_index].data); \
         } \
     } while(0)
 
