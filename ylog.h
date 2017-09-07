@@ -620,8 +620,8 @@ stop_record_##name: ;
             } \
             set_perf_point(mp##name, __FILE__, __LINE__, __func__, #name, #unit); \
         } \
-        uint32_t *_p = get_perf_point_data_block(mp##name); \
-        *_p = (uint32_t)count; \
+        uint32_t *name##_p = get_perf_point_data_block(mp##name); \
+        *name##_p = (uint32_t)count; \
         stop_record_##name:
 
 /*
@@ -641,8 +641,8 @@ stop_record_##name: ;
         static uint32_t name##sub_total; \
         name##sub_total += count; \
         if (name##sub_total >= threshold) { \
-            uint32_t *_p = get_perf_point_data_block(mp##name); \
-            *_p = (uint32_t)name##sub_total; \
+            uint32_t *name##_p = get_perf_point_data_block(mp##name); \
+            *name##_p = (uint32_t)name##sub_total; \
             name##sub_total = 0; \
         } \
         stop_record_##name:
