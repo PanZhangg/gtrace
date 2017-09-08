@@ -784,6 +784,8 @@ display_trace_point_record_cli(struct trace_manager *tm, int id)
 {
     int i;
 
+    int count = 1;
+
     int start;
 
     if (id > tm->trace_point_num) {
@@ -804,14 +806,11 @@ display_trace_point_record_cli(struct trace_manager *tm, int id)
             if (tp->cr_fn) {
                 RETRIEVE_TP_CONTENT(tp, i);
                 printf("%s", g_output_buffer);
-                printf
-                    ("======================================================================\n");
+                printf("===Record Seq: %d===\n", ++count);
             }
         }
         RETRIEVE_TP_CONTENT(tp, (tp->event_seq % (CIRCULAR_BUFFER_SIZE)));
         printf("%s", g_output_buffer);
-        printf
-            ("======================================================================\n");
     }
 }
 
