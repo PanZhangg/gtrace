@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-c -O2 -g -Wall -Wno-strict-aliasing
-LDFLAGS=-lcheck -lsubunit -lrt -lpthread -lm -lmenu -lpanel -lncurses
+LDFLAGS=-lcheck -lrt -lpthread -lm -lmenu -lpanel -lncurses
 
 #all: run_tests example_target ylog_view
 all: example_target ylog_view
